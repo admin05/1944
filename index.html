@@ -1,0 +1,2956 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>天穹前线 1944</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: rgba(15, 24, 31, .82);
+      --line: rgba(200, 231, 255, .24);
+      --ink: #eef8ff;
+      --muted: #a9bfca;
+      --gold: #ffd166;
+      --danger: #ff5a57;
+      --green: #49db9a;
+      --blue: #58c7ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(55, 83, 92, .55), transparent 28%),
+        radial-gradient(circle at 85% 80%, rgba(75, 58, 34, .44), transparent 35%),
+        linear-gradient(135deg, #080d0e 0%, #101718 45%, #1d211d 100%);
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 4px),
+        linear-gradient(90deg, rgba(255,255,255,.05), transparent 18%, transparent 82%, rgba(255,255,255,.05));
+      mix-blend-mode: screen;
+      opacity: .75;
+    }
+
+    .shell {
+      width: 100vw;
+      height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      background: #04080a;
+    }
+
+    .cabinet {
+      width: min(100vw, calc(100dvh * 3 / 2));
+      height: min(100dvh, calc(100vw * 2 / 3));
+      min-width: 0;
+      aspect-ratio: 3 / 2;
+      position: relative;
+      border: 0;
+      background: #04080a;
+      box-shadow:
+        inset 0 0 34px rgba(89, 204, 255, .16);
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: auto;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hud-top {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      gap: 8px;
+      text-shadow: 0 2px 0 #000;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+
+    .stat {
+      min-height: 36px;
+      padding: 5px 7px;
+      border: 1px solid var(--line);
+      background: rgba(7, 12, 14, .56);
+      box-shadow: inset 0 0 12px rgba(255,255,255,.06);
+    }
+
+    .stat:nth-child(2) {
+      text-align: center;
+      min-width: 86px;
+    }
+
+    .stat:nth-child(3) {
+      text-align: right;
+    }
+
+    .label {
+      display: block;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.05;
+    }
+
+    .value {
+      display: block;
+      font-size: 15px;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .bar-wrap {
+      height: 8px;
+      border: 1px solid rgba(255, 255, 255, .36);
+      background: rgba(0, 0, 0, .55);
+      margin-top: 4px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #4fe58a, #ffd166, #ff5a57);
+      box-shadow: 0 0 8px rgba(255, 209, 102, .55);
+    }
+
+    .hud-bottom {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 8px;
+      text-shadow: 0 2px 0 #000;
+      font-weight: 800;
+    }
+
+    .weapon-strip {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      max-width: 218px;
+    }
+
+    .chip {
+      padding: 4px 6px;
+      border: 1px solid rgba(255, 255, 255, .24);
+      background: rgba(0,0,0,.52);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .chip.on {
+      color: #071014;
+      background: var(--gold);
+      border-color: #fff4b8;
+      box-shadow: 0 0 12px rgba(255, 209, 102, .65);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(4,8,10,.12), rgba(4,8,10,.75));
+      pointer-events: auto;
+    }
+
+    .menu {
+      width: min(92%, 370px);
+      border: 1px solid rgba(228, 248, 255, .35);
+      background:
+        linear-gradient(180deg, rgba(38, 58, 62, .9), rgba(10, 18, 22, .92)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px);
+      padding: 16px;
+      box-shadow: 0 18px 36px rgba(0,0,0,.52), inset 0 0 0 1px rgba(255,255,255,.08);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 2px;
+      font-size: 32px;
+      line-height: 1;
+      color: #f5fbff;
+      text-shadow: 0 3px 0 #152228, 0 0 18px rgba(88,199,255,.55);
+      letter-spacing: .06em;
+    }
+
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--gold);
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: .18em;
+    }
+
+    .select-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 12px 0 14px;
+    }
+
+    .difficulty-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+
+    .stage-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin: 0 0 10px;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+
+    .plane-btn,
+    .mode-btn,
+    .difficulty-btn,
+    .stage-btn,
+    .input-btn,
+    .main-btn {
+      border: 1px solid rgba(238, 248, 255, .32);
+      color: var(--ink);
+      background: linear-gradient(180deg, #263b40, #111d21);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 3px 0 #05090b;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .plane-btn {
+      height: 86px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 5px;
+      padding: 6px;
+    }
+
+    .plane-btn.active {
+      border-color: #fff4b8;
+      color: #0b1012;
+      background: linear-gradient(180deg, #ffec9c, #d8a73d);
+      box-shadow: 0 0 16px rgba(255,209,102,.45), inset 0 1px 0 rgba(255,255,255,.42), 0 3px 0 #5e4112;
+    }
+
+    .plane-icon {
+      width: 42px;
+      height: 34px;
+      filter: drop-shadow(0 4px 2px rgba(0,0,0,.55));
+    }
+
+    .plane-name {
+      font-size: 10px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .difficulty-btn {
+      min-height: 38px;
+      padding: 6px 4px;
+      font-size: 12px;
+      line-height: 1.1;
+    }
+
+    .mode-btn {
+      min-height: 40px;
+      padding: 6px 4px;
+      font-size: 12px;
+      line-height: 1.1;
+    }
+
+    .stage-btn {
+      min-height: 38px;
+      padding: 5px 3px;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+
+    .input-btn {
+      min-height: 42px;
+      padding: 6px 4px;
+      font-size: 12px;
+      line-height: 1.15;
+    }
+
+    .mode-btn.active,
+    .difficulty-btn.active,
+    .stage-btn.active,
+    .input-btn.active {
+      border-color: #fff4b8;
+      color: #0b1012;
+      background: linear-gradient(180deg, #ffec9c, #d8a73d);
+      box-shadow: 0 0 12px rgba(255,209,102,.38), inset 0 1px 0 rgba(255,255,255,.42), 0 3px 0 #5e4112;
+    }
+
+    .main-btn {
+      width: 100%;
+      min-height: 42px;
+      margin-top: 4px;
+      font-size: 16px;
+      letter-spacing: .08em;
+    }
+
+    .main-btn:disabled {
+      cursor: not-allowed;
+      color: rgba(238, 248, 255, .45);
+      background: linear-gradient(180deg, #263035, #121719);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 3px 0 #05090b;
+    }
+
+    .main-btn:active,
+    .difficulty-btn:active,
+    .stage-btn:active,
+    .input-btn:active,
+    .plane-btn:active {
+      transform: translateY(2px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 1px 0 #05090b;
+    }
+
+    .note {
+      margin: 11px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .boss-intro {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 116px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity .2s ease, transform .2s ease;
+      border: 1px solid rgba(255, 209, 102, .52);
+      background: linear-gradient(180deg, rgba(24, 32, 34, .92), rgba(8, 13, 15, .9));
+      padding: 12px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.42), inset 0 0 18px rgba(255,209,102,.08);
+      text-shadow: 0 2px 0 #000;
+    }
+
+    .boss-intro.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .boss-intro-title {
+      color: var(--gold);
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 6px;
+    }
+
+    .boss-intro-body {
+      color: var(--ink);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .training-card {
+      margin: 10px 0 12px;
+      padding: 10px;
+      border: 1px solid rgba(255, 209, 102, .38);
+      background: rgba(0,0,0,.28);
+      text-align: left;
+    }
+
+    .training-card h2 {
+      margin: 0 0 6px;
+      color: var(--gold);
+      font-size: 13px;
+      letter-spacing: .08em;
+    }
+
+    .training-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .touch-controls {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      display: none;
+      gap: 12px;
+      flex-wrap: wrap;
+      width: 178px;
+      justify-content: flex-end;
+      pointer-events: auto;
+      z-index: 5;
+    }
+
+    .touch-controls.show {
+      display: flex;
+    }
+
+    .touch-btn {
+      width: 78px;
+      height: 64px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,.42);
+      background: rgba(8, 13, 15, .72);
+      color: var(--ink);
+      font-weight: 900;
+      font-size: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.45), inset 0 0 18px rgba(255,209,102,.12);
+    }
+
+    .touch-btn.bomb {
+      width: 78px;
+      height: 64px;
+      border-radius: 10px;
+      color: #071014;
+      background: rgba(255, 209, 102, .86);
+    }
+
+    .side {
+      display: none;
+    }
+
+    .panel {
+      border: 1px solid rgba(238, 248, 255, .2);
+      background: var(--panel);
+      padding: 12px;
+      box-shadow: inset 0 0 24px rgba(120, 203, 255, .06), 0 12px 28px rgba(0,0,0,.28);
+    }
+
+    .panel h2 {
+      margin: 0 0 8px;
+      color: var(--gold);
+      font-size: 13px;
+      line-height: 1.1;
+      letter-spacing: .12em;
+    }
+
+    .panel p,
+    .panel li {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .panel ul {
+      margin: 0;
+      padding: 0 0 0 16px;
+    }
+
+    kbd {
+      display: inline-block;
+      min-width: 20px;
+      padding: 1px 5px 2px;
+      margin: 0 1px;
+      border: 1px solid rgba(255,255,255,.26);
+      background: rgba(0,0,0,.45);
+      color: var(--ink);
+      font-size: 11px;
+      line-height: 1.1;
+      text-align: center;
+      box-shadow: 0 2px 0 rgba(0,0,0,.55);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 860px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        display: none;
+      }
+
+      .cabinet {
+        width: min(100vw, calc(100dvh * 3 / 2));
+        min-width: 0;
+        height: min(100dvh, calc(100vw * 2 / 3));
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <aside class="side" aria-hidden="true">
+      <section class="panel">
+        <h2>街机质感</h2>
+        <p>竖版战场、预渲染金属飞机、低多边形海岛和装甲列车，整体按 2000 年前后街机厅质感制作。</p>
+      </section>
+      <section class="panel">
+        <h2>战场补给</h2>
+        <ul>
+          <li>火力、护盾、僚机、激光、散弹、导弹、回复、炸弹。</li>
+          <li>道具会叠加，满火力后继续拾取可转为分数。</li>
+        </ul>
+      </section>
+    </aside>
+
+    <section class="cabinet" aria-label="天穹前线 1944 竖版街机射击">
+      <canvas id="game" width="1920" height="1280"></canvas>
+      <div class="hud">
+        <div class="hud-top">
+          <div class="stat">
+            <span class="label">得分</span>
+            <span class="value" id="score">000000</span>
+          </div>
+          <div class="stat">
+            <span class="label">关卡</span>
+            <span class="value" id="stage">1-1</span>
+          </div>
+          <div class="stat">
+            <span class="label">首领</span>
+            <span class="value" id="bossText">--</span>
+            <div class="bar-wrap"><div class="bar" id="bossBar"></div></div>
+          </div>
+        </div>
+        <div class="hud-bottom">
+          <div class="weapon-strip" id="weaponStrip"></div>
+          <div class="stat">
+            <span class="label">生命 / 炸弹</span>
+            <span class="value" id="life">3 / 3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <div class="menu">
+          <h1>天穹前线 1944</h1>
+          <p class="subtitle">竖版街机空战</p>
+          <div class="select-grid" id="planeSelect"></div>
+          <div class="mode-grid" id="modeSelect"></div>
+          <div class="difficulty-grid" id="difficultySelect"></div>
+          <div class="stage-grid" id="stageSelect"></div>
+          <div class="input-grid" id="inputSelect"></div>
+          <div class="training-card">
+            <h2>新兵训练</h2>
+            <p id="trainingText">先选择操控方式。完成登记后，按指定键位进行移动、开火、投弹与暂停。</p>
+          </div>
+          <button class="main-btn" id="startBtn">开始出击</button>
+          <p class="note">出击前完成操控登记，这是飞行员上机前的最后一道训练流程。</p>
+        </div>
+      </div>
+      <div class="touch-controls" id="touchControls">
+        <button class="touch-btn" id="touchFire">主炮</button>
+        <button class="touch-btn" id="touchSecondary">副武</button>
+        <button class="touch-btn" id="touchSkill">技能</button>
+        <button class="touch-btn bomb" id="touchBomb">炸弹</button>
+      </div>
+      <div class="boss-intro" id="bossIntro">
+        <div class="boss-intro-title" id="bossIntroTitle"></div>
+        <div class="boss-intro-body" id="bossIntroBody"></div>
+      </div>
+    </section>
+
+    <aside class="side" aria-hidden="true">
+      <section class="panel">
+        <h2>敌军兵力</h2>
+        <ul>
+          <li>高速小兵会侧切、俯冲、散射弹幕。</li>
+          <li>中型机带护甲，装甲列车会锁定齐射。</li>
+          <li>首领有多段装甲和狂暴弹幕。</li>
+        </ul>
+      </section>
+      <section class="panel">
+        <h2>操作</h2>
+        <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> 移动</p>
+        <p><kbd>J</kbd> 主炮　<kbd>K</kbd> 副武　<kbd>L</kbd> 技能　<kbd>;</kbd> 炸弹</p>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    (() => {
+      const canvas = document.querySelector("#game");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width;
+      const H = canvas.height;
+      const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      const scoreEl = document.querySelector("#score");
+      const stageEl = document.querySelector("#stage");
+      const bossTextEl = document.querySelector("#bossText");
+      const bossBarEl = document.querySelector("#bossBar");
+      const lifeEl = document.querySelector("#life");
+      const stripEl = document.querySelector("#weaponStrip");
+      const overlay = document.querySelector("#overlay");
+      const planeSelect = document.querySelector("#planeSelect");
+      const modeSelect = document.querySelector("#modeSelect");
+      const difficultySelect = document.querySelector("#difficultySelect");
+      const stageSelect = document.querySelector("#stageSelect");
+      const inputSelect = document.querySelector("#inputSelect");
+      const startBtn = document.querySelector("#startBtn");
+      const trainingText = document.querySelector("#trainingText");
+      const touchControls = document.querySelector("#touchControls");
+      const touchFire = document.querySelector("#touchFire");
+      const touchSecondary = document.querySelector("#touchSecondary");
+      const touchSkill = document.querySelector("#touchSkill");
+      const touchBomb = document.querySelector("#touchBomb");
+      const bossIntro = document.querySelector("#bossIntro");
+      const bossIntroTitle = document.querySelector("#bossIntroTitle");
+      const bossIntroBody = document.querySelector("#bossIntroBody");
+
+      const planeTypes = [
+        { id: "falcon", name: "隼式", skillName: "穿甲长矛", skillDesc: "发射一束高伤害贯穿光矛，适合拆 Boss 装甲炮台。", color: "#6bd6ff", wing: "#dcefff", hp: 3, speed: 7.8, shot: 8.2, spread: 1, bomb: "napalm" },
+        { id: "raiden", name: "雷电", skillName: "雷暴扇面", skillDesc: "向前方展开密集扇形雷暴弹幕，适合清理大群小兵。", color: "#ff5a57", wing: "#ffd1c4", hp: 4, speed: 6.5, shot: 9.8, spread: 2, bomb: "shock" },
+        { id: "atlas", name: "巨神", skillName: "重磅俯冲", skillDesc: "投下重型航弹，对 Boss、本体炮台和地面炮塔造成范围伤害。", color: "#ffd166", wing: "#fff1b3", hp: 5, speed: 5.7, shot: 7.2, spread: 0, bomb: "buster" },
+        { id: "comet", name: "彗星", skillName: "时缓航迹", skillDesc: "短暂减缓战场节奏并获得无敌窗口，适合穿越密集弹幕。", color: "#49db9a", wing: "#d8ffe9", hp: 3, speed: 8.8, shot: 7.6, spread: 3, bomb: "laser" },
+        { id: "vulcan", name: "火神", skillName: "旋转弹幕", skillDesc: "向四周释放旋转火神弹幕，适合被包围或贴近 Boss 时反击。", color: "#c88cff", wing: "#f0ddff", hp: 4, speed: 6.9, shot: 10.5, spread: 2, bomb: "cluster" },
+        { id: "mustang", name: "野马", skillName: "护航编队", skillDesc: "呼叫临时僚机并补充护盾，适合长期战和首领压迫战。", color: "#f4f7f7", wing: "#9cc8d6", hp: 3, speed: 7.4, shot: 8.8, spread: 1, bomb: "sweep" }
+      ];
+
+      const powerDefs = {
+        power: { label: "火力", color: "#ffd166" },
+        shield: { label: "护盾", color: "#58c7ff" },
+        wingman: { label: "僚机", color: "#49db9a" },
+        laser: { label: "激光", color: "#c88cff" },
+        spread: { label: "散弹", color: "#ff8d5c" },
+        missile: { label: "导弹", color: "#f4f7f7" },
+        heal: { label: "维修", color: "#ff5a57" },
+        bomb: { label: "炸弹", color: "#b7ff5a" }
+      };
+      const MAX_ENEMY_BULLETS = 46;
+      const BASE_ACTIVE_MINIONS = 6;
+      const FIRST_BOSS_SUPPORT_MINIONS = 2;
+      const LATER_BOSS_SUPPORT_MINIONS = 8;
+      const LATER_BOSS_INITIAL_SUPPORT = 6;
+      const BOSS_WARNING_TIME = 820;
+      const BOSS_SPAWN_TIME = 950;
+      const MAX_PARTICLES = 55;
+      const MAX_TRAILS = 24;
+      const difficulties = [
+        { id: "normal", name: "普通", enemyCap: 6, bullet: 1, hp: 1, drop: .55, shieldDrop: .28 },
+        { id: "hard", name: "困难", enemyCap: 7, bullet: 1.22, hp: 1.18, drop: .42, shieldDrop: .2 },
+        { id: "inferno", name: "炼狱", enemyCap: 8, bullet: 1.45, hp: 1.35, drop: .32, shieldDrop: .14 }
+      ];
+      const mapThemes = [
+        { id: "ardennes", name: "阿登森林", sky: ["#24352f", "#345139", "#233428"], terrain: ["forest", "road", "bunker"], cloud: "#dce8df" },
+        { id: "pearl", name: "珍珠港", sky: ["#1d4e67", "#2f8c9a", "#31594f"], terrain: ["harbor", "ship", "island"], cloud: "#eaf7ff" },
+        { id: "berlin", name: "柏林", sky: ["#363637", "#5a5048", "#2c2c2f"], terrain: ["ruin", "road", "base"], cloud: "#d8d4cc" },
+        { id: "moscow", name: "莫斯科", sky: ["#566a72", "#c7d6d8", "#6c7a80"], terrain: ["snow", "road", "base"], cloud: "#ffffff" },
+        { id: "stalingrad", name: "斯大林格勒", sky: ["#332f2d", "#6a5143", "#2b2928"], terrain: ["trench", "ruin", "fire"], cloud: "#d6c7b7" }
+      ];
+      const inputModes = [
+        { id: "keyboard", name: "键盘鼠标", training: "键盘鼠标登记：WASD / 方向键移动，J 主炮，K 副武器，L 专属技能，分号键投弹，P 暂停。" },
+        { id: "gamepad", name: "手柄", training: "手柄登记：左摇杆或方向键移动，A 主炮，X 副武器，Y 专属技能，B 投弹，Start 暂停。" },
+        { id: "touch", name: "触屏", training: "触屏登记：左手拖动飞机移动，右下角依次是主炮、副武、技能、炸弹四个近距离攻击键。" }
+      ];
+      const gameModes = [
+        { id: "campaign", name: "战役模式", desc: "推进关卡并迎战首领。" },
+        { id: "training", name: "训练模式", desc: "持续练习移动、火力、技能、炸弹和暂停升级。" }
+      ];
+
+      let selectedPlane = planeTypes[0];
+      let selectedGameMode = gameModes[0];
+      let selectedDifficulty = difficulties[0];
+      let selectedStage = 1;
+      let selectedInputMode = null;
+      let last = 0;
+      let raf = 0;
+      let state = "menu";
+      let keys = new Set();
+      let pointer = { active: false, x: 0, y: 0, lastTap: 0 };
+      let touchFireHeld = false;
+      let touchSecondaryHeld = false;
+      let gamepadBombLatch = false;
+      let gamepadPauseLatch = false;
+      let gamepadSecondaryLatch = false;
+      let gamepadSkillLatch = false;
+      let gamepadConfirmLatch = false;
+      let gamepadUpLatch = false;
+      let gamepadDownLatch = false;
+      let pauseSelection = 0;
+      let shake = 0;
+      let flash = 0;
+      let slow = 1;
+      let game;
+      let hudCache = {};
+      let audioCtx = null;
+      let lastShotSound = 0;
+      let trainingTime = 0;
+      let pauseButtons = [];
+
+      function ensureAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+      }
+
+      function playTone(freq, duration = .08, type = "square", gain = .035, slide = 0) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const amp = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), now + duration);
+        amp.gain.setValueAtTime(gain, now);
+        amp.gain.exponentialRampToValueAtTime(.0001, now + duration);
+        osc.connect(amp);
+        amp.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      }
+
+      function playNoise(duration = .18, gain = .045) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+        const src = audioCtx.createBufferSource();
+        const amp = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.value = 900;
+        amp.gain.setValueAtTime(gain, now);
+        amp.gain.exponentialRampToValueAtTime(.0001, now + duration);
+        src.buffer = buffer;
+        src.connect(filter);
+        filter.connect(amp);
+        amp.connect(audioCtx.destination);
+        src.start(now);
+      }
+
+      function sfx(name) {
+        if (!audioCtx) return;
+        if (name === "shot") {
+          if (game && game.t - lastShotSound < 5) return;
+          lastShotSound = game ? game.t : 0;
+          playTone(620, .045, "square", .018, -220);
+        } else if (name === "missile") {
+          playTone(180, .12, "sawtooth", .025, -70);
+        } else if (name === "hit") {
+          playTone(220, .055, "triangle", .018, -90);
+        } else if (name === "boom") {
+          playNoise(.22, .06);
+          playTone(92, .2, "sawtooth", .035, -36);
+        } else if (name === "bigboom") {
+          playNoise(.42, .09);
+          playTone(70, .38, "sawtooth", .05, -30);
+        } else if (name === "pickup") {
+          playTone(740, .07, "triangle", .025, 260);
+          window.setTimeout(() => playTone(980, .06, "triangle", .02), 60);
+        } else if (name === "hurt") {
+          playTone(150, .18, "sawtooth", .04, -80);
+        } else if (name === "bomb") {
+          playNoise(.35, .075);
+          playTone(120, .28, "square", .035, -45);
+        } else if (name === "boss") {
+          playTone(110, .24, "sawtooth", .04, 90);
+          window.setTimeout(() => playTone(82, .28, "sawtooth", .04, 70), 160);
+        }
+      }
+
+      function newGame() {
+        return {
+          t: 0,
+          mode: selectedGameMode.id,
+          score: 0,
+          stage: selectedStage,
+          stageTime: 0,
+          scroll: 0,
+          spawnTimer: 0,
+          bossTimer: 0,
+          bossSpawned: false,
+          trainingResets: 0,
+          supplyDrop: false,
+          restTimer: selectedGameMode.id === "training" ? 90 : 160,
+          paused: false,
+          player: {
+            x: W / 2,
+            y: H - 164,
+            vx: 0,
+            vy: 0,
+            r: 28,
+            hp: selectedPlane.hp,
+            maxHp: selectedPlane.hp,
+            bombs: selectedGameMode.id === "training" ? 2 : 3,
+            inv: 150,
+            fire: 0,
+            secondaryFire: 0,
+            skillCooldown: 0,
+            mainLevel: 1,
+            secondaryLevel: 1,
+            skillLevel: 1,
+            cooldownLevel: 1,
+            power: 1,
+            shield: 0,
+            wingman: 0,
+            laser: 0,
+            spread: selectedPlane.spread,
+            missile: 0,
+            plane: selectedPlane
+          },
+          bullets: [],
+          enemyBullets: [],
+          missiles: [],
+          enemies: [],
+          turrets: seedTurrets(4),
+          powerups: [],
+          particles: [],
+          trails: [],
+          clouds: seedClouds(),
+          terrain: seedTerrain()
+        };
+      }
+
+      function seedClouds() {
+        const arr = [];
+        for (let i = 0; i < 32; i++) {
+          arr.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            s: 40 + Math.random() * 130,
+            a: .08 + Math.random() * .18,
+            v: .28 + Math.random() * .55
+          });
+        }
+        return arr;
+      }
+
+      function seedTerrain() {
+        const arr = [];
+        const theme = currentMapTheme();
+        for (let i = 0; i < 44; i++) {
+          const type = theme.terrain[Math.floor(Math.random() * theme.terrain.length)];
+          arr.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            w: 44 + Math.random() * 118,
+            h: 34 + Math.random() * 130,
+            type,
+            rot: Math.random() * Math.PI,
+            seed: Math.random()
+          });
+        }
+        return arr;
+      }
+
+      function currentMapTheme() {
+        const stage = game ? game.stage : 1;
+        return mapThemes[(stage - 1) % mapThemes.length];
+      }
+
+      function refreshMap() {
+        game.clouds = seedClouds();
+        game.terrain = seedTerrain();
+        game.turrets = seedTurrets(game.enemies.some(e => e.kind === "boss") ? 7 : 4);
+      }
+
+      function seedTurrets(count) {
+        const arr = [];
+        for (let i = 0; i < count; i++) {
+          arr.push(makeTurret(
+            120 + Math.random() * (W - 240),
+            150 + Math.random() * (H * .58),
+            Math.random() > .55 ? "flak" : "cannon"
+          ));
+        }
+        return arr;
+      }
+
+      function makeTurret(x, y, type = "flak") {
+        const heavy = type === "naval" || type === "cannon";
+        return {
+          kind: "turret",
+          type,
+          x,
+          y,
+          r: heavy ? 34 : 26,
+          hp: type === "naval" ? 95 : heavy ? 70 : 46,
+          maxHp: type === "naval" ? 95 : heavy ? 70 : 46,
+          fire: 35 + Math.random() * 60,
+          rot: -Math.PI / 2,
+          score: type === "naval" ? 520 : 320
+        };
+      }
+
+      function makePlaneIcon(type) {
+        return `<svg class="plane-icon" viewBox="0 0 80 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="g-${type.id}" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="${type.wing}"/>
+              <stop offset=".55" stop-color="${type.color}"/>
+              <stop offset="1" stop-color="#142227"/>
+            </linearGradient>
+          </defs>
+          <path d="M40 3 51 36 75 48 53 52 45 61 40 46 35 61 27 52 5 48 29 36Z" fill="url(#g-${type.id})" stroke="#eef8ff" stroke-width="2"/>
+          <path d="M35 16h10l4 28-9 8-9-8Z" fill="rgba(0,0,0,.24)"/>
+        </svg>`;
+      }
+
+      function renderPlaneSelect() {
+        planeSelect.innerHTML = "";
+        planeTypes.forEach(type => {
+          const btn = document.createElement("button");
+          btn.className = `plane-btn ${type.id === selectedPlane.id ? "active" : ""}`;
+          btn.innerHTML = `${makePlaneIcon(type)}<span class="plane-name">${type.name}</span>`;
+          btn.addEventListener("click", () => {
+            selectedPlane = type;
+            trainingTime = 0;
+            renderPlaneSelect();
+            updateTrainingText();
+          });
+          planeSelect.appendChild(btn);
+        });
+      }
+
+      function renderModeSelect() {
+        modeSelect.innerHTML = "";
+        gameModes.forEach(mode => {
+          const btn = document.createElement("button");
+          btn.className = `mode-btn ${mode.id === selectedGameMode.id ? "active" : ""}`;
+          btn.textContent = mode.name;
+          btn.title = mode.desc;
+          btn.addEventListener("click", () => {
+            selectedGameMode = mode;
+            trainingTime = 0;
+            renderModeSelect();
+            game = newGame();
+            updateTrainingText();
+            updateHud();
+          });
+          modeSelect.appendChild(btn);
+        });
+      }
+
+      function renderDifficultySelect() {
+        difficultySelect.innerHTML = "";
+        difficulties.forEach(level => {
+          const btn = document.createElement("button");
+          btn.className = `difficulty-btn ${level.id === selectedDifficulty.id ? "active" : ""}`;
+          btn.textContent = level.name;
+          btn.addEventListener("click", () => {
+            selectedDifficulty = level;
+            renderDifficultySelect();
+          });
+          difficultySelect.appendChild(btn);
+        });
+      }
+
+      function renderStageSelect() {
+        stageSelect.innerHTML = "";
+        mapThemes.forEach((theme, index) => {
+          const stage = index + 1;
+          const btn = document.createElement("button");
+          btn.className = `stage-btn ${selectedStage === stage ? "active" : ""}`;
+          btn.textContent = theme.name;
+          btn.addEventListener("click", () => {
+            selectedStage = stage;
+            trainingTime = 0;
+            renderStageSelect();
+            game = newGame();
+            updateTrainingText();
+            updateHud();
+          });
+          stageSelect.appendChild(btn);
+        });
+      }
+
+      function renderInputSelect() {
+        inputSelect.innerHTML = "";
+        inputModes.forEach(mode => {
+          const btn = document.createElement("button");
+          btn.className = `input-btn ${selectedInputMode?.id === mode.id ? "active" : ""}`;
+          btn.textContent = mode.name;
+          btn.addEventListener("click", () => {
+            selectedInputMode = mode;
+            trainingTime = 0;
+            renderInputSelect();
+            updateTrainingText();
+          });
+          inputSelect.appendChild(btn);
+        });
+        startBtn.disabled = !selectedInputMode;
+      }
+
+      function updateTrainingText() {
+        startBtn.textContent = selectedGameMode.id === "training" ? "开始训练" : "开始出击";
+        if (selectedInputMode) {
+          trainingText.textContent = trainingSteps()[0];
+        } else {
+          const modeHint = selectedGameMode.id === "training" ? "训练模式不会推进首领战，坠机后会复位继续练习。" : "战役模式会推进关卡并迎战首领。";
+          trainingText.textContent = `先选择操控方式。当前起始关卡：${mapThemes[selectedStage - 1].name}。${modeHint}`;
+        }
+        startBtn.disabled = !selectedInputMode;
+      }
+
+      function resizeCanvasBacking() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+      }
+
+      function start() {
+        if (!selectedInputMode) {
+          updateTrainingText();
+          return;
+        }
+        ensureAudio();
+        overlay.querySelector("h1").textContent = "天穹前线 1944";
+        overlay.querySelector(".subtitle").textContent = selectedGameMode.id === "training" ? "新兵训练空域" : "竖版街机空战";
+        startBtn.textContent = selectedGameMode.id === "training" ? "开始训练" : "开始出击";
+        bossIntro.classList.remove("show");
+        hudCache = {};
+        game = newGame();
+        state = "play";
+        overlay.classList.add("hidden");
+        touchControls.classList.toggle("show", selectedInputMode.id === "touch");
+        last = performance.now();
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(loop);
+      }
+
+      function loop(now) {
+        const dt = Math.min(34, now - last) * .06 * slow;
+        last = now;
+        if (state === "play" && !game.paused) update(dt);
+        if (state === "play" && game.paused) updatePauseInput();
+        if (state !== "play") updateTrainingDemo(dt);
+        draw();
+        raf = requestAnimationFrame(loop);
+      }
+
+      function updateTrainingDemo(dt) {
+        trainingTime += dt;
+        if (!selectedInputMode || !trainingText) return;
+        const step = Math.floor((trainingTime / 180) % 5);
+        const steps = trainingSteps();
+        trainingText.textContent = steps[step];
+      }
+
+      function trainingSteps() {
+        if (selectedInputMode?.id === "gamepad") {
+          return [
+            "新兵第一项：左摇杆或方向键控制航线，保持飞机在蓝色航迹内。",
+            "新兵第二项：A 主炮，X 副武器，Y 专属技能，先点射训练靶。",
+            "新兵第三项：按 B 投弹，清除地面炮塔阵地。",
+            "新兵第四项：看到红色弹道时，用小幅移动穿过空隙。",
+            `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”。${selectedPlane.skillDesc}`
+          ];
+        }
+        if (selectedInputMode?.id === "touch") {
+          return [
+            "新兵第一项：左手拖动飞机移动，别让手指遮住机头。",
+            "新兵第二项：按住“主炮”，再点“副武”和“技能”，持续压制训练靶。",
+            "新兵第三项：点击“炸弹”按钮，清除地面炮塔阵地。",
+            "新兵第四项：拖动时保持节奏，躲开红色地对空炮弹。",
+            `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”。${selectedPlane.skillDesc}`
+          ];
+        }
+        return [
+          "新兵第一项：WASD 或方向键移动，沿蓝色航迹完成机动。",
+          "新兵第二项：J 主炮、K 副武、L 技能，右手按键集中完成攻击。",
+          "新兵第三项：按分号键投弹，清除地面炮塔阵地。",
+          "新兵第四项：看到红色弹道时，用小幅移动穿过空隙。",
+          `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”。${selectedPlane.skillDesc}`
+        ];
+      }
+
+      function update(dt) {
+        game.t += dt;
+        game.stageTime += dt;
+        game.scroll += 3.4 * dt;
+        shake = Math.max(0, shake - dt);
+        flash = Math.max(0, flash - dt);
+        slow = Math.min(1, slow + .012 * dt);
+
+        updatePlayer(dt);
+        spawnWave(dt);
+        updateEntities(dt);
+        collide();
+        updateHud();
+      }
+
+      function updatePlayer(dt) {
+        const p = game.player;
+        let ax = 0;
+        let ay = 0;
+        const gamepad = readGamepadInput();
+        if (selectedInputMode?.id === "gamepad") {
+          ax = gamepad.x;
+          ay = gamepad.y;
+          if (gamepad.secondary && !gamepadSecondaryLatch) fireSecondary();
+          if (gamepad.skill && !gamepadSkillLatch) usePlaneSkill();
+          if (gamepad.bomb && !gamepadBombLatch) useBomb();
+          if (gamepad.pause && !gamepadPauseLatch && game && state === "play") game.paused = !game.paused;
+          gamepadSecondaryLatch = gamepad.secondary;
+          gamepadSkillLatch = gamepad.skill;
+          gamepadBombLatch = gamepad.bomb;
+          gamepadPauseLatch = gamepad.pause;
+        } else {
+          if (keys.has("ArrowLeft") || keys.has("KeyA")) ax -= 1;
+          if (keys.has("ArrowRight") || keys.has("KeyD")) ax += 1;
+          if (keys.has("ArrowUp") || keys.has("KeyW")) ay -= 1;
+          if (keys.has("ArrowDown") || keys.has("KeyS")) ay += 1;
+        }
+
+        if (pointer.active) {
+          p.x += (pointer.x - p.x) * .22 * dt;
+          p.y += (pointer.y - p.y) * .22 * dt;
+        } else if (ax || ay) {
+          const m = Math.hypot(ax, ay) || 1;
+          p.x += ax / m * p.plane.speed * dt;
+          p.y += ay / m * p.plane.speed * dt;
+        }
+
+        applyBossPressure(p, dt);
+        p.x = clamp(p.x, 42, W - 42);
+        p.y = clamp(p.y, 90, H - 70);
+        p.fire -= dt;
+        p.secondaryFire -= dt;
+        p.skillCooldown -= dt;
+        p.inv = Math.max(0, p.inv - dt);
+        if (isFirePressed(gamepad) && p.fire <= 0) firePlayer();
+        if (selectedInputMode?.id === "touch" && touchSecondaryHeld) fireSecondary();
+        if (game.t % 7 < dt && game.trails.length < MAX_TRAILS) game.trails.push({ x: p.x, y: p.y + 28, r: 5, life: 20, c: p.plane.color });
+      }
+
+      function isFirePressed(gamepad) {
+        if (selectedInputMode?.id === "gamepad") return gamepad.fire;
+        if (selectedInputMode?.id === "touch") return touchFireHeld;
+        return keys.has("KeyJ");
+      }
+
+      function readGamepadInput() {
+        const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+        const pad = Array.from(pads).find(Boolean);
+        if (!pad) return { x: 0, y: 0, fire: false, bomb: false };
+        const x = Math.abs(pad.axes[0] || 0) > .18 ? pad.axes[0] : ((pad.buttons[15]?.pressed ? 1 : 0) - (pad.buttons[14]?.pressed ? 1 : 0));
+        const y = Math.abs(pad.axes[1] || 0) > .18 ? pad.axes[1] : ((pad.buttons[13]?.pressed ? 1 : 0) - (pad.buttons[12]?.pressed ? 1 : 0));
+        return {
+          x: clamp(x, -1, 1),
+          y: clamp(y, -1, 1),
+          up: y < -.45 || !!pad.buttons[12]?.pressed,
+          down: y > .45 || !!pad.buttons[13]?.pressed,
+          fire: !!(pad.buttons[0]?.pressed || pad.buttons[7]?.pressed),
+          secondary: !!(pad.buttons[2]?.pressed),
+          skill: !!(pad.buttons[3]?.pressed),
+          bomb: !!(pad.buttons[1]?.pressed || pad.buttons[6]?.pressed),
+          pause: !!(pad.buttons[9]?.pressed)
+        };
+      }
+
+      function applyBossPressure(p, dt) {
+        const boss = game.enemies.find(e => e.kind === "boss");
+        if (!boss || boss.y < -boss.r * .4) return;
+        const dx = p.x - boss.x;
+        const dy = p.y - boss.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const pressureRadius = boss.r * 1.18;
+        if (distance > pressureRadius) return;
+
+        const force = (1 - distance / pressureRadius) * (boss.bossType === "tank" ? 7.2 : boss.bossType === "carrier" ? 6.2 : 5.7);
+        p.x += dx / distance * force * dt;
+        p.y += Math.max(.35, dy / distance) * force * dt + force * .32 * dt;
+        if (game.t % 9 < dt) {
+          game.trails.push({ x: p.x, y: p.y - 18, r: 7 + force, life: 16, c: "#ff5a57" });
+        }
+      }
+
+      function firePlayer() {
+        const p = game.player;
+        p.fire = Math.max(3.2, 12 - p.power * 1.2 - p.plane.shot * .18 - p.mainLevel * .45);
+        sfx("shot");
+        const count = Math.min(7, 1 + Math.floor(p.power / 2) + Math.floor((p.mainLevel - 1) / 2));
+        const spread = (p.spread + p.plane.spread) * .06;
+        for (let i = 0; i < count; i++) {
+          const off = i - (count - 1) / 2;
+          game.bullets.push({
+            x: p.x + off * 12,
+            y: p.y - 33,
+            vx: off * spread * 15,
+            vy: -15.5,
+            r: 5,
+            dmg: 7 + p.power * 2 + p.mainLevel * 2,
+            type: "shot",
+            color: p.plane.color
+          });
+        }
+        if (p.laser > 0) {
+          game.bullets.push({ x: p.x, y: p.y - 70, vx: 0, vy: -24, r: 8, dmg: 18 + p.power * 3, type: "laser", color: "#c88cff" });
+          p.laser -= .025;
+        }
+        if (p.missile > 0 && game.t % 18 < 1) {
+          game.missiles.push({ x: p.x - 22, y: p.y - 8, vx: -1.3, vy: -8, r: 8, dmg: 34, life: 150 });
+          game.missiles.push({ x: p.x + 22, y: p.y - 8, vx: 1.3, vy: -8, r: 8, dmg: 34, life: 150 });
+          sfx("missile");
+          p.missile -= .08;
+        }
+        if (p.wingman > 0) {
+          [-54, 54].forEach((dx) => {
+            game.bullets.push({ x: p.x + dx, y: p.y - 18, vx: dx * .025, vy: -13, r: 4, dmg: 7 + p.power, type: "wing", color: "#49db9a" });
+          });
+        }
+      }
+
+      function fireSecondary() {
+        const p = game.player;
+        if (p.secondaryFire > 0) return;
+        p.secondaryFire = Math.max(18, 36 - p.secondaryLevel * 4);
+        sfx("missile");
+        if (p.plane.id === "atlas") {
+          game.missiles.push({ x: p.x, y: p.y - 18, vx: 0, vy: -6, r: 14 + p.secondaryLevel, dmg: 70 + p.power * 5 + p.secondaryLevel * 18, life: 180 });
+        } else if (p.plane.id === "comet") {
+          game.bullets.push({ x: p.x, y: p.y - 80, vx: 0, vy: -26, r: 10 + p.secondaryLevel, dmg: 34 + p.power * 4 + p.secondaryLevel * 12, type: "laser", color: "#49db9a" });
+        } else {
+          [-1, 1].forEach(side => {
+            game.missiles.push({ x: p.x + side * (28 + p.secondaryLevel * 4), y: p.y - 8, vx: side * 2.4, vy: -8, r: 9, dmg: 38 + p.power * 3 + p.secondaryLevel * 10, life: 155 });
+          });
+        }
+      }
+
+      function usePlaneSkill() {
+        const p = game.player;
+        if (p.skillCooldown > 0) return;
+        p.skillCooldown = Math.max(160, 360 - p.skillLevel * 28 - p.cooldownLevel * 26);
+        sfx("boss");
+        if (p.plane.id === "falcon") {
+          game.bullets.push({ x: p.x, y: p.y - 120, vx: 0, vy: -32, r: 18 + p.skillLevel * 3, dmg: 170 + p.skillLevel * 55, type: "laser", color: "#6bd6ff" });
+        } else if (p.plane.id === "raiden") {
+          const arc = 7 + p.skillLevel;
+          for (let i = -arc; i <= arc; i++) {
+            game.bullets.push({ x: p.x, y: p.y - 40, vx: i * .85, vy: -15 + Math.abs(i) * .25, r: 7, dmg: 28 + p.skillLevel * 5, type: "shot", color: "#ff5a57" });
+          }
+        } else if (p.plane.id === "atlas") {
+          explode(p.x, p.y - 170, "#ffd166", 24, 1.4);
+          game.enemies.forEach(e => e.hp -= e.kind === "boss" ? 240 + p.skillLevel * 75 : 160 + p.skillLevel * 45);
+          game.turrets.forEach(t => t.hp -= 140 + p.skillLevel * 55);
+        } else if (p.plane.id === "comet") {
+          slow = .42;
+          p.inv = Math.max(p.inv, 130 + p.skillLevel * 20);
+        } else if (p.plane.id === "vulcan") {
+          const count = 24 + p.skillLevel * 6;
+          for (let i = 0; i < count; i++) {
+            const a = Math.PI * 2 * i / count;
+            game.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, r: 6, dmg: 26 + p.skillLevel * 4, type: "shot", color: "#c88cff" });
+          }
+        } else if (p.plane.id === "mustang") {
+          p.wingman = Math.min(8, p.wingman + 1 + p.skillLevel);
+          p.shield = Math.min(5, p.shield + 1 + p.skillLevel * .35);
+        }
+      }
+
+      function upgradeOptions() {
+        const p = game.player;
+        return [
+          { key: "mainLevel", name: "主炮强化", desc: "提高主炮伤害、射速和弹数。", level: p.mainLevel, max: 5, cost: 900 + p.mainLevel * 650 },
+          { key: "secondaryLevel", name: "副武器强化", desc: "提高副武器伤害并缩短副武器间隔。", level: p.secondaryLevel, max: 5, cost: 1100 + p.secondaryLevel * 700 },
+          { key: "skillLevel", name: `${p.plane.skillName}强化`, desc: "强化当前飞机专属技能效果。", level: p.skillLevel, max: 5, cost: 1400 + p.skillLevel * 850 },
+          { key: "cooldownLevel", name: "冷却训练", desc: "缩短专属技能冷却。", level: p.cooldownLevel, max: 4, cost: 1200 + p.cooldownLevel * 900 }
+        ];
+      }
+
+      function buyUpgrade(index) {
+        if (!game || !game.paused) return;
+        const p = game.player;
+        const opt = upgradeOptions()[index];
+        if (!opt || opt.level >= opt.max || game.score < opt.cost) return;
+        game.score -= opt.cost;
+        p[opt.key] += 1;
+        sfx("pickup");
+        hudCache = {};
+        updateHud();
+      }
+
+      function updatePauseInput() {
+        if (selectedInputMode?.id !== "gamepad") return;
+        const gp = readGamepadInput();
+        if (gp.down && !gamepadDownLatch) pauseSelection = clamp(pauseSelection + 1, 0, upgradeOptions().length - 1);
+        if (gp.up && !gamepadUpLatch) pauseSelection = clamp(pauseSelection - 1, 0, upgradeOptions().length - 1);
+        if (gp.fire && !gamepadConfirmLatch) buyUpgrade(pauseSelection);
+        if (gp.pause && !gamepadPauseLatch) game.paused = false;
+        gamepadUpLatch = gp.up;
+        gamepadDownLatch = gp.down;
+        gamepadConfirmLatch = gp.fire;
+        gamepadPauseLatch = gp.pause;
+      }
+
+      function updateTrainingMode(dt, danger, minions) {
+        const trainingDanger = Math.min(2.15, danger);
+        const trainingCap = Math.min(activeMinionCap(), 5 + Math.floor(playerStrength() * 2));
+        if (game.spawnTimer <= 0 && game.restTimer <= 0 && minions < trainingCap) {
+          const roll = Math.random();
+          if (roll < .52) spawnScoutSquad(trainingDanger);
+          else if (roll < .82) spawnDivePair(trainingDanger);
+          else spawnHeavy(trainingDanger * .85);
+          game.spawnTimer = 70 + Math.random() * 42 - playerStrength() * 14;
+        } else if (game.spawnTimer <= 0) {
+          game.spawnTimer = 22;
+        }
+
+        if (game.t % 190 < dt && game.turrets.length < 6) {
+          game.turrets.push(makeTurret(
+            140 + Math.random() * (W - 280),
+            -40,
+            Math.random() > .55 ? "flak" : "cannon"
+          ));
+        }
+      }
+
+      function spawnWave(dt) {
+        game.spawnTimer -= dt;
+        game.bossTimer += dt;
+        game.restTimer = Math.max(0, game.restTimer - dt);
+        const danger = 1 + game.stageTime / 880;
+        const strength = playerStrength();
+        const boss = game.enemies.find(e => e.kind === "boss");
+        const minions = game.enemies.filter(e => e.kind !== "boss").length;
+
+        if (game.mode === "training") {
+          game.bossTimer = 0;
+          game.supplyDrop = false;
+          updateTrainingMode(dt, danger, minions);
+          return;
+        }
+
+        if (!game.supplyDrop && !game.bossSpawned && game.bossTimer > BOSS_WARNING_TIME) {
+          beginSupplyPhase();
+        }
+
+        const minionCap = boss ? bossSupportCap() : activeMinionCap();
+        if (game.spawnTimer <= 0 && game.restTimer <= 0 && game.bossTimer < BOSS_WARNING_TIME && minions < minionCap) {
+          const roll = Math.random();
+          if (roll < .42) spawnScoutSquad(danger);
+          else if (roll < .68) spawnDivePair(danger);
+          else if (roll < .86 && strength > .25) spawnHeavy(danger);
+          else if (strength > .45) spawnTrain(danger);
+          else spawnScoutSquad(danger);
+          game.spawnTimer = Math.max(72, 128 - danger * 4 - strength * 24 - Math.random() * 10);
+        } else if (boss && game.spawnTimer <= 0 && game.restTimer <= 0 && minions < minionCap) {
+          Math.random() > .45 ? spawnScoutSquad(danger) : spawnDivePair(danger);
+          game.spawnTimer = game.stage === 1 ? 145 - strength * 30 + Math.random() * 35 : Math.max(34, 72 - strength * 18 - game.stage * 5 + Math.random() * 18);
+        } else if (game.spawnTimer <= 0) {
+          game.spawnTimer = 18;
+        }
+
+        if (!game.bossSpawned && game.bossTimer > BOSS_SPAWN_TIME) {
+          spawnBoss();
+        }
+      }
+
+      function beginSupplyPhase() {
+        game.supplyDrop = true;
+        game.restTimer = 130;
+        game.spawnTimer = 150;
+        game.enemyBullets.length = 0;
+        game.enemies = game.enemies.filter(e => {
+          if (e.kind === "boss") return true;
+          explode(e.x, e.y, "#ffd166", 6, .6);
+          return false;
+        });
+        const pool = ["power", "shield", "wingman", "missile", "laser", "bomb"];
+        for (let i = 0; i < 3; i++) {
+          const type = pool[Math.floor(Math.random() * pool.length)];
+          if (i >= 2 || (game.stage >= 3 && i >= 1)) continue;
+          game.powerups.push({ type, x: 295 + i * 130, y: 124 - (i % 2) * 26, vy: 1.45, r: 18, rot: 0, seed: Math.random() * 100 });
+        }
+        if (game.stage <= 2 && Math.random() > .68) {
+          game.powerups.push({ type: "heal", x: W / 2, y: 78, vy: 1.45, r: 18, rot: 0, seed: Math.random() * 100 });
+        }
+      }
+
+      function spawnScoutSquad(danger) {
+        const boss = game.enemies.some(e => e.kind === "boss");
+        const current = game.enemies.filter(e => e.kind !== "boss").length;
+        const cap = boss ? bossSupportCap() : activeMinionCap();
+        const n = Math.min(cap - current, 2 + Math.floor(Math.random() * 2));
+        if (n <= 0) return;
+        const side = Math.random() > .5 ? 1 : -1;
+        for (let i = 0; i < n; i++) {
+          game.enemies.push({
+            kind: "scout",
+            x: side > 0 ? -35 - i * 38 : W + 35 + i * 38,
+            y: 110 + i * 36,
+            vx: side * (3.2 + danger * .45),
+            vy: 1.45 + danger * .12,
+            r: 24,
+            hp: (10 + danger * 3) * selectedDifficulty.hp,
+            maxHp: (10 + danger * 3) * selectedDifficulty.hp,
+            fire: 58 + i * 12,
+            score: 120,
+            color: "#88a7b0",
+            phase: Math.random() * 10
+          });
+        }
+      }
+
+      function spawnDivePair(danger) {
+        const boss = game.enemies.some(e => e.kind === "boss");
+        const current = game.enemies.filter(e => e.kind !== "boss").length;
+        const cap = boss ? bossSupportCap() : activeMinionCap();
+        const count = Math.min(cap - current, Math.random() > .35 ? 2 : 1);
+        if (count <= 0) return;
+        for (let i = 0; i < count; i++) {
+          const x = 130 + Math.random() * (W - 260);
+          game.enemies.push({
+            kind: "dive",
+            x: x + (i ? 80 : -80),
+            y: -70 - i * 70,
+            vx: i ? -1.3 : 1.3,
+            vy: 3.5 + danger * .45,
+            r: 31,
+            hp: (22 + danger * 5) * selectedDifficulty.hp,
+            maxHp: (22 + danger * 5) * selectedDifficulty.hp,
+            fire: 48,
+            score: 240,
+            color: "#9b7757",
+            phase: Math.random() * 10
+          });
+        }
+      }
+
+      function spawnHeavy(danger) {
+        if (game.enemies.filter(e => e.kind !== "boss").length >= activeMinionCap()) return;
+        game.enemies.push({
+          kind: "heavy",
+          x: 110 + Math.random() * (W - 220),
+          y: -90,
+          vx: Math.random() > .5 ? 1.2 : -1.2,
+          vy: 1.6,
+          r: 48,
+          hp: (78 + danger * 14) * selectedDifficulty.hp,
+          maxHp: (78 + danger * 14) * selectedDifficulty.hp,
+          fire: 44,
+          score: 680,
+          color: "#6f8790",
+          phase: Math.random() * 10
+        });
+      }
+
+      function spawnTrain(danger) {
+        if (game.enemies.filter(e => e.kind !== "boss").length >= activeMinionCap()) return;
+        game.enemies.push({
+          kind: "train",
+          x: Math.random() > .5 ? 96 : W - 96,
+          y: -120,
+          vx: 0,
+          vy: 2.1,
+          r: 56,
+          hp: (105 + danger * 18) * selectedDifficulty.hp,
+          maxHp: (105 + danger * 18) * selectedDifficulty.hp,
+          fire: 52,
+          score: 820,
+          color: "#536265",
+          phase: 0
+        });
+      }
+
+      function spawnBoss() {
+        const types = [
+          { id: "fortress", name: "钢翼堡垒·赫尔曼", hp: 3800, r: 460, y: -520, vy: 1.15, color: "#8d3939", score: 8000, intro: "四发重型轰炸机改装的空中要塞，机腹炮塔会扫射整片空域。优先处理伴飞小队，等待它横移露出核心。" },
+          { id: "tank", name: "陆行巨炮·巴巴罗萨", hp: 3300, r: 420, y: -460, vy: 1.35, color: "#667052", score: 7000, intro: "超重型坦克被运上海岸高台，双联主炮会直接锁定你的航线。它压迫感强，但转向慢，利用两侧空隙反击。" },
+          { id: "carrier", name: "灰海航母·利维坦", hp: 4700, r: 500, y: -620, vy: .95, color: "#526a73", score: 9000, intro: "装甲航母进入战区，甲板炮和舰载机弹幕会同时封锁中路。不要贪火力，先清支援机再攻击舰桥。" }
+        ];
+        const type = types[(game.stage - 1) % types.length];
+        game.bossSpawned = true;
+        game.supplyDrop = false;
+        game.restTimer = 80;
+        game.enemyBullets.length = 0;
+        game.enemies = game.enemies.filter(e => e.kind === "boss").slice(0, 1);
+        game.enemies.push({
+          kind: "boss",
+          bossType: type.id,
+          bossName: type.name,
+          x: W / 2,
+          y: type.y,
+          vx: 0,
+          vy: type.vy,
+          r: type.r,
+          hp: (type.hp + game.stage * 520 + Math.max(0, game.stage - 2) * 360) * selectedDifficulty.hp,
+          maxHp: (type.hp + game.stage * 520 + Math.max(0, game.stage - 2) * 360) * selectedDifficulty.hp,
+          fire: 60,
+          score: type.score,
+          color: type.color,
+          phase: 0,
+          parts: makeBossParts(type.id, type.r)
+        });
+        showBossIntro(type);
+        sfx("boss");
+        spawnBossTurrets(type.id);
+        spawnBossSupportWave();
+      }
+
+      function spawnBossTurrets(bossType) {
+        if (bossType !== "tank" && bossType !== "carrier") return;
+        const type = bossType === "carrier" ? "naval" : "cannon";
+        const yBase = bossType === "carrier" ? 260 : 360;
+        const positions = bossType === "carrier"
+          ? [[.18, yBase], [.34, yBase + 96], [.5, yBase + 38], [.66, yBase + 96], [.82, yBase]]
+          : [[.22, yBase], [.38, yBase + 120], [.5, yBase + 40], [.62, yBase + 120], [.78, yBase]];
+        game.turrets = game.turrets.filter(t => t.y > H * .56).slice(0, 3);
+        positions.forEach(([px, py]) => game.turrets.push(makeTurret(W * px, py, type)));
+      }
+
+      function makeBossParts(bossType, r) {
+        const layout = bossType === "carrier"
+          ? [[-.42, -.18, "舰艏炮"], [-.2, .12, "左舷炮"], [0, -.02, "舰桥炮"], [.2, .12, "右舷炮"], [.42, -.18, "舰艉炮"], [0, .34, "甲板炮"]]
+          : bossType === "tank"
+            ? [[-.34, -.12, "左副炮"], [.34, -.12, "右副炮"], [0, -.34, "主炮塔"], [-.18, .2, "履带炮"], [.18, .2, "履带炮"]]
+            : [[-.46, .02, "左翼炮"], [-.25, -.24, "左机背炮"], [0, -.12, "机首炮"], [.25, -.24, "右机背炮"], [.46, .02, "右翼炮"], [0, .28, "机腹炮"]];
+        return layout.map(([ox, oy, name], i) => ({
+          name,
+          ox,
+          oy,
+          r: bossType === "carrier" ? 34 : bossType === "tank" ? 32 : 30,
+          hp: (bossType === "carrier" ? 180 : bossType === "tank" ? 155 : 140) * selectedDifficulty.hp,
+          maxHp: (bossType === "carrier" ? 180 : bossType === "tank" ? 155 : 140) * selectedDifficulty.hp,
+          fire: 24 + i * 11,
+          phase: i * 1.7,
+          destroyed: false
+        }));
+      }
+
+      function showBossIntro(type) {
+        bossIntroTitle.textContent = `首领来袭：${type.name}`;
+        bossIntroBody.textContent = type.intro;
+        bossIntro.classList.add("show");
+        window.clearTimeout(showBossIntro.timer);
+        showBossIntro.timer = window.setTimeout(() => bossIntro.classList.remove("show"), 5200);
+      }
+
+      function bossSupportCap() {
+        if (game.stage === 1) return FIRST_BOSS_SUPPORT_MINIONS;
+        return Math.min(10, LATER_BOSS_SUPPORT_MINIONS + Math.floor((game.stage - 2) / 2));
+      }
+
+      function activeMinionCap() {
+        return Math.max(BASE_ACTIVE_MINIONS, selectedDifficulty.enemyCap + Math.floor(Math.max(0, game.stage - 2) / 2));
+      }
+
+      function spawnBossSupportWave() {
+        const target = game.stage === 1 ? FIRST_BOSS_SUPPORT_MINIONS : Math.min(bossSupportCap(), LATER_BOSS_INITIAL_SUPPORT + Math.floor((game.stage - 2) / 2));
+        const danger = 1 + game.stageTime / 880;
+        while (game.enemies.filter(e => e.kind !== "boss").length < target) {
+          const current = game.enemies.filter(e => e.kind !== "boss").length;
+          if (game.stage === 1 || current % 2 === 0) spawnScoutSquad(danger);
+          else spawnDivePair(danger);
+          if (game.enemies.filter(e => e.kind !== "boss").length === current) break;
+        }
+      }
+
+      function updateEntities(dt) {
+        for (const c of game.clouds) {
+          c.y += c.v * dt;
+          if (c.y - c.s > H) {
+            c.y = -c.s;
+            c.x = Math.random() * W;
+          }
+        }
+        for (const t of game.terrain) {
+          t.y += (1.6 + t.h * .006) * dt;
+          if (t.y - t.h > H) {
+            t.y = -t.h - Math.random() * 80;
+            t.x = Math.random() * W;
+          }
+        }
+
+        game.bullets.forEach(b => {
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+        });
+
+        game.missiles.forEach(m => {
+          const target = nearestEnemy(m.x, m.y);
+          if (target) {
+            const a = Math.atan2(target.y - m.y, target.x - m.x);
+            m.vx += Math.cos(a) * .32 * dt;
+            m.vy += Math.sin(a) * .32 * dt;
+          }
+          const sp = Math.hypot(m.vx, m.vy) || 1;
+          m.vx = m.vx / sp * Math.min(12, sp);
+          m.vy = m.vy / sp * Math.min(12, sp);
+          m.x += m.vx * dt;
+          m.y += m.vy * dt;
+          m.life -= dt;
+          if (game.t % 5 < dt && game.trails.length < MAX_TRAILS) game.trails.push({ x: m.x, y: m.y + 8, r: 5, life: 16, c: "#ffd166" });
+        });
+
+        game.turrets.forEach(t => updateTurret(t, dt));
+        game.enemies.forEach(e => updateEnemy(e, dt));
+        game.enemyBullets.forEach(b => {
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+        });
+        game.powerups.forEach(p => {
+          p.y += p.vy * dt;
+          p.x += Math.sin((game.t + p.seed) * .08) * 1.3 * dt;
+          p.rot += .08 * dt;
+        });
+        game.particles.forEach(p => {
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vx *= .985;
+          p.vy *= .985;
+          p.life -= dt;
+          p.r += p.grow * dt;
+        });
+        game.trails.forEach(p => {
+          p.y += 2.4 * dt;
+          p.life -= dt;
+          p.r += .25 * dt;
+        });
+
+        game.bullets = game.bullets.filter(b => b.y > -80 && b.y < H + 80 && b.x > -80 && b.x < W + 80);
+        game.missiles = game.missiles.filter(m => m.life > 0 && m.y > -100 && m.y < H + 100 && m.x > -100 && m.x < W + 100);
+        game.enemyBullets = game.enemyBullets.filter(b => b.y > -80 && b.y < H + 90 && b.x > -80 && b.x < W + 80);
+        game.enemies = game.enemies.filter(e => e.hp > 0 && (e.entered || e.kind === "boss" || (e.y < H + 180 && e.x > -190 && e.x < W + 190)));
+        game.turrets = game.turrets.filter(t => t.hp > 0 && t.y > -80 && t.y < H + 80);
+        game.powerups = game.powerups.filter(p => p.y < H + 60);
+        game.particles = game.particles.filter(p => p.life > 0);
+        game.trails = game.trails.filter(p => p.life > 0);
+      }
+
+      function updateTurret(t, dt) {
+        t.y += 1.4 * dt;
+        if (t.y > H + 70) {
+          t.y = -40;
+          t.x = 120 + Math.random() * (W - 240);
+        }
+        const p = game.player;
+        t.rot = Math.atan2(p.y - t.y, p.x - t.x);
+        t.fire -= dt;
+        if (t.fire <= 0 && t.y > 70 && t.y < H * .72) {
+          const speed = t.type === "naval" ? 4.6 : t.type === "cannon" ? 4.1 : 3.6;
+          const radius = t.type === "naval" ? 13 : t.type === "cannon" ? 11 : 8;
+          addEnemyBullet(t.x + Math.cos(t.rot) * 26, t.y + Math.sin(t.rot) * 26, t.rot, speed, radius, t.type === "flak" ? "#ffd166" : "#ff8d5c");
+          if (t.type !== "flak" && playerStrength() > .35) {
+            addEnemyBullet(t.x, t.y, t.rot - .12, speed * .92, radius - 2, "#f4f7f7");
+            addEnemyBullet(t.x, t.y, t.rot + .12, speed * .92, radius - 2, "#f4f7f7");
+          }
+          t.fire = (t.type === "naval" ? 70 : t.type === "cannon" ? 82 : 105) - playerStrength() * 26;
+        }
+      }
+
+      function updateEnemy(e, dt) {
+        e.phase += dt;
+        if (e.kind === "boss") {
+          const targetY = e.bossType === "tank" ? 330 : e.bossType === "carrier" ? 245 : 205;
+          const sway = e.bossType === "tank" ? W * .13 : e.bossType === "carrier" ? W * .11 : W * .16;
+          e.y = Math.min(targetY, e.y + e.vy * dt);
+          const xRate = e.bossType === "carrier" ? .014 : e.bossType === "tank" ? .022 : .02;
+          const yDrift = Math.sin(e.phase * (e.bossType === "tank" ? .028 : .018)) * (e.bossType === "carrier" ? 34 : 48);
+          e.x = W / 2 + Math.sin(e.phase * xRate) * sway + Math.sin(e.phase * .037) * (sway * .28);
+          if (e.y >= targetY) e.y = targetY + yDrift;
+          updateBossParts(e, dt);
+          const hpRatio = e.hp / e.maxHp;
+          e.fire -= dt;
+          if (e.fire <= 0) {
+            bossFire(e, hpRatio);
+            const base = e.bossType === "carrier" ? 58 : e.bossType === "tank" ? 54 : 62;
+            e.fire = hpRatio < .35 ? base - 16 : hpRatio < .68 ? base - 8 : base;
+          }
+          return;
+        }
+        e.x += (e.vx + Math.sin(e.phase * .05) * (e.kind === "heavy" ? 1.6 : .7)) * dt;
+        e.y += e.vy * dt;
+        keepEnemyOnBattlefield(e);
+        e.fire -= dt;
+        if (e.fire <= 0) {
+          enemyFire(e);
+          const strength = playerStrength();
+          e.fire = (e.kind === "train" ? 118 : e.kind === "heavy" ? 104 : 126) - strength * 38;
+        }
+      }
+
+      function updateBossParts(boss, dt) {
+        if (!boss.parts) return;
+        const p = game.player;
+        const strength = playerStrength();
+        for (const part of boss.parts) {
+          if (part.destroyed) continue;
+          const pos = bossPartPosition(boss, part);
+          part.fire -= dt;
+          if (part.fire <= 0 && pos.y > -40 && pos.y < H * .65) {
+            const a = Math.atan2(p.y - pos.y, p.x - pos.x);
+            addEnemyBullet(pos.x, pos.y, a, 3.5 + strength * .9, 9 + part.r * .05, "#ff8d5c");
+            if (boss.bossType !== "tank" && strength > .4) {
+              addEnemyBullet(pos.x, pos.y, a - .14, 3.2, 8, "#ffd166");
+              addEnemyBullet(pos.x, pos.y, a + .14, 3.2, 8, "#ffd166");
+            }
+            part.fire = (boss.bossType === "carrier" ? 56 : boss.bossType === "tank" ? 68 : 62) - strength * 18 + Math.random() * 18;
+          }
+        }
+      }
+
+      function bossPartPosition(boss, part) {
+        return {
+          x: boss.x + part.ox * boss.r,
+          y: boss.y + part.oy * boss.r
+        };
+      }
+
+      function livingBossParts(boss) {
+        return boss.parts ? boss.parts.filter(part => !part.destroyed && part.hp > 0) : [];
+      }
+
+      function keepEnemyOnBattlefield(e) {
+        if (!e.entered && e.x > e.r + 18 && e.x < W - e.r - 18 && e.y > 70) e.entered = true;
+        if (!e.entered) return;
+
+        const top = e.kind === "train" ? 150 : 95;
+        const bottom = e.kind === "train" ? H * .68 : H * .46;
+        const left = e.r + 22;
+        const right = W - e.r - 22;
+
+        if (e.x < left) {
+          e.x = left;
+          e.vx = Math.abs(e.vx || 1.1);
+        } else if (e.x > right) {
+          e.x = right;
+          e.vx = -Math.abs(e.vx || 1.1);
+        }
+
+        if (e.y < top) {
+          e.y = top;
+          e.vy = Math.abs(e.vy || 1);
+        } else if (e.y > bottom) {
+          e.y = bottom;
+          e.vy = -Math.max(.55, Math.abs(e.vy) * .55);
+        }
+
+        if (e.y < bottom - 80 && e.vy < 0) e.vy = Math.abs(e.vy) * .7;
+      }
+
+      function enemyFire(e) {
+        const p = game.player;
+        const base = Math.atan2(p.y - e.y, p.x - e.x);
+        const strength = playerStrength();
+        if (e.kind === "scout") {
+          addEnemyBullet(e.x, e.y + 20, base, 4.2, 8, "#ffb45a");
+          if (strength > .65) addEnemyBullet(e.x, e.y + 20, base + .16, 3.7, 7, "#ffb45a");
+        } else if (e.kind === "dive") {
+          addEnemyBullet(e.x, e.y + 26, base, 3.8, 9, "#ff6d6a");
+          if (strength > .45) {
+            addEnemyBullet(e.x, e.y + 26, base - .18, 3.6, 8, "#ff6d6a");
+            addEnemyBullet(e.x, e.y + 26, base + .18, 3.6, 8, "#ff6d6a");
+          }
+        } else if (e.kind === "heavy") {
+          const spokes = strength > .55 ? 4 : 2;
+          for (let i = 0; i < spokes; i++) addEnemyBullet(e.x, e.y + 34, Math.PI * 2 * i / spokes + game.t * .015, 2.4, 8, "#ffd166");
+          addEnemyBullet(e.x - 28, e.y + 24, base, 4.7, 11, "#ff5a57");
+        } else if (e.kind === "train") {
+          addEnemyBullet(e.x, e.y + 44, base, 3.8, 10, "#c88cff");
+          if (strength > .5) {
+            addEnemyBullet(e.x, e.y + 44, base - .16, 3.6, 9, "#c88cff");
+            addEnemyBullet(e.x, e.y + 44, base + .16, 3.6, 9, "#c88cff");
+          }
+          addEnemyBullet(e.x, e.y + 24, Math.PI / 2, 3.2, 8, "#f4f7f7");
+        }
+      }
+
+      function bossFire(e, hpRatio) {
+        const p = game.player;
+        const base = Math.atan2(p.y - e.y, p.x - e.x);
+        const strength = playerStrength();
+        if (e.bossType === "tank") {
+          addEnemyBullet(e.x - 42, e.y + 30, base - .08, 4.3, 14, "#ff8d5c");
+          addEnemyBullet(e.x + 42, e.y + 30, base + .08, 4.3, 14, "#ff8d5c");
+          if (strength > .35 || hpRatio < .68) {
+            for (let i = -1; i <= 1; i++) addEnemyBullet(e.x, e.y + 58, Math.PI / 2 + i * .18, 3.4, 10, "#ffd166");
+          }
+          return;
+        }
+        if (e.bossType === "carrier") {
+          for (let i = -2; i <= 2; i++) addEnemyBullet(e.x + i * 42, e.y + 88, Math.PI / 2 + i * .05, 3.0, 10, "#f4f7f7");
+          addEnemyBullet(e.x - 98, e.y + 36, base, 4.0, 12, "#58c7ff");
+          addEnemyBullet(e.x + 98, e.y + 36, base, 4.0, 12, "#58c7ff");
+          if (strength > .45 || hpRatio < .5) {
+            addEnemyBullet(e.x, e.y + 114, base - .2, 4.1, 9, "#c88cff");
+            addEnemyBullet(e.x, e.y + 114, base + .2, 4.1, 9, "#c88cff");
+          }
+          return;
+        }
+        const ringCount = hpRatio < .35 ? 6 + Math.round(strength * 4) : hpRatio < .68 ? 5 + Math.round(strength * 3) : 4 + Math.round(strength * 2);
+        for (let i = 0; i < ringCount; i++) {
+          const a = Math.PI * 2 * i / ringCount + game.t * .024;
+          addEnemyBullet(e.x, e.y + 30, a, hpRatio < .35 ? 3.2 : 2.6, 9, hpRatio < .35 ? "#ff5a57" : "#ffd166");
+        }
+        for (let side of [-1, 1]) {
+          addEnemyBullet(e.x + side * 86, e.y + 70, base, 4.5, 13, "#ff8d5c");
+        }
+        if (hpRatio < .68 && strength > .3) {
+          for (let i = -2; i <= 2; i++) addEnemyBullet(e.x, e.y + 118, Math.PI / 2 + i * .14, 3.9, 12, "#c88cff");
+        }
+        if (hpRatio < .35 && strength > .55) {
+          for (let i = 0; i < 3; i++) addEnemyBullet(e.x - 54 + i * 54, e.y + 92, Math.PI / 2 + Math.sin(game.t * .04 + i) * .16, 4.5, 10, "#f4f7f7");
+        }
+      }
+
+      function addEnemyBullet(x, y, a, speed, r, color) {
+        if (game.enemyBullets.length >= enemyBulletCap()) return;
+        game.enemyBullets.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, r, color, seed: Math.random() * 99 });
+      }
+
+      function playerStrength() {
+        const p = game.player;
+        const raw =
+          (p.power - 1) / 6 * .38 +
+          Math.min(1, p.wingman / 3) * .16 +
+          Math.min(1, p.laser / 4) * .14 +
+          Math.min(1, p.missile / 4) * .14 +
+          Math.min(1, Math.max(0, p.spread - p.plane.spread) / 4) * .08 +
+          Math.min(.1, (game.stage - 1) * .04);
+        return clamp(raw, 0, 1);
+      }
+
+      function enemyBulletCap() {
+        const stagePressure = Math.min(18, Math.max(0, game.stage - 2) * 4);
+        return Math.round((10 + stagePressure + playerStrength() * (MAX_ENEMY_BULLETS - 10)) * selectedDifficulty.bullet);
+      }
+
+      function collide() {
+        const p = game.player;
+        for (const b of game.bullets) {
+          for (const e of game.enemies) {
+            if (e.hp <= 0) continue;
+            if (e.kind === "boss" && hitBossPart(e, b, b.dmg)) {
+              b.y = -999;
+              sfx("hit");
+              spark(b.x, b.y, b.color, 3);
+              break;
+            }
+            if (hit(b, e, b.r + e.r * .72)) {
+              e.hp -= b.dmg;
+              b.y = -999;
+              sfx("hit");
+              spark(b.x, b.y, b.color, 2);
+              if (e.hp <= 0) killEnemy(e);
+              break;
+            }
+          }
+          if (b.y < -900) continue;
+          for (const t of game.turrets) {
+            if (t.hp <= 0) continue;
+            if (hit(b, t, b.r + t.r)) {
+              t.hp -= b.dmg;
+              b.y = -999;
+              sfx("hit");
+              spark(b.x, b.y, b.color, 2);
+              if (t.hp <= 0) killTurret(t);
+              break;
+            }
+          }
+        }
+        for (const m of game.missiles) {
+          for (const e of game.enemies) {
+            if (e.hp <= 0) continue;
+            if (e.kind === "boss" && hitBossPart(e, m, m.dmg)) {
+              m.life = 0;
+              sfx("boom");
+              explode(m.x, m.y, "#ffd166", 8, .7);
+              break;
+            }
+            if (hit(m, e, m.r + e.r * .75)) {
+              e.hp -= m.dmg;
+              m.life = 0;
+              sfx("boom");
+              explode(m.x, m.y, "#ffd166", 8, .7);
+              if (e.hp <= 0) killEnemy(e);
+              break;
+            }
+          }
+          if (m.life <= 0) continue;
+          for (const t of game.turrets) {
+            if (t.hp <= 0) continue;
+            if (hit(m, t, m.r + t.r)) {
+              t.hp -= m.dmg;
+              m.life = 0;
+              sfx("boom");
+              explode(m.x, m.y, "#ffd166", 8, .7);
+              if (t.hp <= 0) killTurret(t);
+              break;
+            }
+          }
+        }
+        for (const b of game.enemyBullets) {
+          if (p.inv <= 0 && hit(b, p, b.r + p.r * .58)) {
+            b.y = H + 999;
+            damagePlayer(1);
+          }
+        }
+        for (const e of game.enemies) {
+          if (e.hp <= 0) continue;
+          if (p.inv <= 0 && hit(e, p, e.r * .62 + p.r * .62)) {
+            e.hp -= 70;
+            damagePlayer(e.kind === "boss" ? 2 : 1);
+            if (e.hp <= 0) killEnemy(e);
+          }
+        }
+        for (const pu of game.powerups) {
+          if (hit(pu, p, 42)) {
+            collectPower(pu.type);
+            pu.y = H + 999;
+          }
+        }
+      }
+
+      function hitBossPart(boss, shot, damage) {
+        if (!boss.parts) return false;
+        for (const part of boss.parts) {
+          if (part.destroyed || part.hp <= 0) continue;
+          const pos = bossPartPosition(boss, part);
+          if ((shot.x - pos.x) ** 2 + (shot.y - pos.y) ** 2 < (shot.r + part.r) ** 2) {
+            part.hp -= damage;
+            if (part.hp <= 0) {
+              part.destroyed = true;
+              explode(pos.x, pos.y, "#ff8d5c", 14, .9);
+              shake = Math.max(shake, 6);
+              game.score += 450;
+            }
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function killTurret(t) {
+        game.score += t.score;
+        explode(t.x, t.y, "#ff8d5c", 12, .85);
+        shake = Math.max(shake, 5);
+      }
+
+      function killEnemy(e) {
+        game.score += e.score;
+        sfx(e.kind === "boss" ? "bigboom" : "boom");
+        explode(e.x, e.y, e.kind === "boss" ? "#ff5a57" : "#ffd166", e.kind === "boss" ? 32 : 10, e.kind === "boss" ? 1.8 : .8);
+        shake = Math.max(shake, e.kind === "boss" ? 20 : 7);
+        flash = Math.max(flash, e.kind === "boss" ? 18 : 3);
+        const dropChance = e.kind === "boss" ? (game.stage <= 2 ? .75 : .35) : Math.max(.06, (.22 - game.stage * .025) * selectedDifficulty.drop);
+        if (Math.random() < dropChance) dropPower(e.x, e.y, e.kind === "boss");
+        if (e.kind === "boss") {
+          game.stage += 1;
+          game.stageTime = 0;
+          game.bossTimer = 0;
+          game.bossSpawned = false;
+          game.supplyDrop = false;
+          game.restTimer = 160;
+          game.spawnTimer = 150;
+          game.enemyBullets.length = 0;
+          refreshMap();
+          game.player.inv = 210;
+          flash = 35;
+          if (game.stage <= 3) {
+            const type = Math.random() > .5 ? "shield" : "missile";
+            game.powerups.push({ type, x: W / 2, y: 180, vy: 1.5, r: 18, rot: 0, seed: Math.random() * 100 });
+          }
+        }
+      }
+
+      function damagePlayer(amount) {
+        const p = game.player;
+        if (p.shield > 0) {
+          p.shield = Math.max(0, p.shield - amount);
+          sfx("hurt");
+          p.inv = 90;
+          flash = 6;
+          shake = 9;
+          spark(p.x, p.y, "#58c7ff", 8);
+          return;
+        }
+        p.hp -= amount;
+        sfx("hurt");
+        p.power = Math.max(1, p.power - 1);
+        p.inv = 130;
+        flash = 10;
+        shake = 14;
+        explode(p.x, p.y, "#ff5a57", 14, 1);
+        if (p.hp <= 0) {
+          if (game.mode === "training") {
+            game.trainingResets += 1;
+            game.score = Math.max(0, game.score - 600);
+            p.hp = p.maxHp;
+            p.x = W / 2;
+            p.y = H - 164;
+            p.inv = 240;
+            p.bombs = Math.max(p.bombs, 1);
+            p.shield = Math.max(p.shield, 1);
+            p.power = Math.max(1, p.power);
+            game.enemyBullets.length = 0;
+            game.restTimer = 120;
+            game.spawnTimer = 120;
+            flash = 28;
+            return;
+          }
+          state = "over";
+          overlay.classList.remove("hidden");
+          touchControls.classList.remove("show");
+          overlay.querySelector("h1").textContent = "任务失败";
+          overlay.querySelector(".subtitle").textContent = `得分 ${String(game.score).padStart(6, "0")}`;
+          startBtn.textContent = "再次出击";
+        }
+      }
+
+      function dropPower(x, y, boss = false) {
+        const types = boss
+          ? ["power", "wingman", "laser", "missile", "bomb", ...(Math.random() < selectedDifficulty.shieldDrop ? ["shield"] : [])]
+          : ["power", "wingman", "laser", "missile", "bomb", ...(Math.random() < selectedDifficulty.shieldDrop * .45 ? ["shield"] : [])];
+        const count = boss ? (game.stage <= 2 ? 2 : 1) : 1;
+        for (let i = 0; i < count; i++) {
+          const type = types[Math.floor(Math.random() * types.length)];
+          game.powerups.push({ type, x: x + (i - count / 2) * 34, y: y - i * 16, vy: 2.2, r: 18, rot: 0, seed: Math.random() * 100 });
+        }
+      }
+
+      function collectPower(type) {
+        const p = game.player;
+        game.score += 60;
+        if (type === "power") p.power = Math.min(7, p.power + 1);
+        if (type === "shield") p.shield = Math.min(4, p.shield + 1.6);
+        if (type === "wingman") p.wingman = Math.min(4, p.wingman + 1);
+        if (type === "laser") p.laser = Math.min(5, p.laser + 1.3);
+        if (type === "spread") p.spread = Math.min(5, p.spread + 1);
+        if (type === "missile") p.missile = Math.min(5, p.missile + 1.5);
+        if (type === "heal") p.hp = Math.min(p.maxHp, p.hp + 1);
+        if (type === "bomb") p.bombs = Math.min(6, p.bombs + 1);
+        sfx("pickup");
+        spark(p.x, p.y - 12, powerDefs[type].color, 8);
+      }
+
+      function useBomb() {
+        if (state !== "play" || game.paused) return;
+        const p = game.player;
+        if (p.bombs <= 0) return;
+        p.bombs -= 1;
+        sfx("bomb");
+        p.inv = 150;
+        slow = .34;
+        shake = 26;
+        flash = 28;
+        explode(p.x, p.y, "#f4f7f7", 26, 2);
+        game.enemyBullets.length = 0;
+        game.enemies.forEach(e => {
+          if (e.hp <= 0) return;
+          e.hp -= e.kind === "boss" ? 360 : 220;
+          spark(e.x, e.y, "#f4f7f7", 6);
+          if (e.hp <= 0) killEnemy(e);
+        });
+      }
+
+      function draw() {
+        ctx.save();
+        ctx.clearRect(0, 0, W, H);
+        const sx = shake ? (Math.random() - .5) * shake : 0;
+        const sy = shake ? (Math.random() - .5) * shake : 0;
+        ctx.translate(sx, sy);
+        drawBackground();
+        drawTerrain();
+        if (state !== "play") {
+          drawTrainingDemo();
+          drawVignette();
+          ctx.restore();
+          return;
+        }
+        drawTrails();
+        game?.turrets.forEach(drawTurret);
+        game?.powerups.forEach(drawPower);
+        game?.missiles.forEach(drawMissile);
+        game?.bullets.forEach(drawPlayerBullet);
+        game?.enemies.forEach(drawEnemy);
+        game?.enemyBullets.forEach(drawEnemyBullet);
+        if (game) drawPlayer(game.player);
+        game?.particles.forEach(drawParticle);
+        drawVignette();
+        ctx.restore();
+        if (flash > 0) {
+          ctx.fillStyle = `rgba(255, 248, 224, ${Math.min(.34, flash / 75)})`;
+          ctx.fillRect(0, 0, W, H);
+        }
+        if (game?.paused) {
+          drawPauseUpgradeMenu();
+        }
+      }
+
+      function drawPauseUpgradeMenu() {
+        pauseButtons = [];
+        ctx.fillStyle = "rgba(0,0,0,.62)";
+        ctx.fillRect(0, 0, W, H);
+        const panelW = Math.min(920, W * .72);
+        const panelX = W / 2 - panelW / 2;
+        const panelY = H * .18;
+        ctx.fillStyle = "rgba(10,18,22,.92)";
+        roundRect(panelX, panelY, panelW, 520, 8);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,209,102,.55)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#ffd166";
+        ctx.font = "900 38px Trebuchet MS";
+        ctx.fillText("暂停整备：技能升级", panelX + 34, panelY + 58);
+        ctx.fillStyle = "#eef8ff";
+        ctx.font = "800 24px Trebuchet MS";
+        ctx.fillText(`可用分数：${game.score}`, panelX + 34, panelY + 96);
+        ctx.fillText(`当前座机：${game.player.plane.name}｜技能：${game.player.plane.skillName}`, panelX + 34, panelY + 128);
+
+        upgradeOptions().forEach((opt, i) => {
+          const x = panelX + 34;
+          const y = panelY + 158 + i * 82;
+          const canBuy = opt.level < opt.max && game.score >= opt.cost;
+          ctx.fillStyle = i === pauseSelection ? "rgba(88,199,255,.22)" : canBuy ? "rgba(255,209,102,.18)" : "rgba(255,255,255,.06)";
+          roundRect(x, y, panelW - 68, 66, 6);
+          ctx.fill();
+          ctx.strokeStyle = i === pauseSelection ? "rgba(88,199,255,.8)" : canBuy ? "rgba(255,209,102,.62)" : "rgba(255,255,255,.18)";
+          ctx.stroke();
+          ctx.fillStyle = canBuy ? "#ffd166" : "#a9bfca";
+          ctx.font = "900 22px Trebuchet MS";
+          ctx.fillText(`${i + 1}. ${opt.name}  等级 ${opt.level}/${opt.max}`, x + 18, y + 26);
+          ctx.fillStyle = "#eef8ff";
+          ctx.font = "700 16px Trebuchet MS";
+          ctx.fillText(`${opt.desc}  费用：${opt.level >= opt.max ? "已满级" : opt.cost}`, x + 18, y + 52);
+          pauseButtons.push({ x, y, w: panelW - 68, h: 66, index: i });
+        });
+
+        ctx.fillStyle = "#a9bfca";
+        ctx.font = "700 17px Trebuchet MS";
+        ctx.fillText("键盘按 1-4 购买升级；鼠标/触屏点击条目；P 返回战场。", panelX + 34, panelY + 500);
+      }
+
+      function drawBackground() {
+        const theme = currentMapTheme();
+        const grd = ctx.createLinearGradient(0, 0, 0, H);
+        grd.addColorStop(0, theme.sky[0]);
+        grd.addColorStop(.48, theme.sky[1]);
+        grd.addColorStop(1, theme.sky[2]);
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, W, H);
+
+        const waveY = (game?.scroll || 0) % 90;
+        ctx.strokeStyle = theme.id === "pearl" ? "rgba(210,240,255,.11)" : "rgba(255,255,255,.055)";
+        ctx.lineWidth = 2;
+        for (let y = -90 + waveY; y < H + 90; y += 90) {
+          ctx.beginPath();
+          for (let x = -30; x <= W + 30; x += 30) {
+            ctx.lineTo(x, y + Math.sin((x + y + (game?.t || 0) * 4) * .012) * 10);
+          }
+          ctx.stroke();
+        }
+
+        if (!game) return;
+        for (const c of game.clouds) drawCloud(c);
+      }
+
+      function drawTerrain() {
+        if (!game) return;
+        for (const t of game.terrain) {
+          ctx.save();
+          ctx.translate(t.x, t.y);
+          ctx.rotate(t.rot);
+          if (t.type === "island") {
+            const g = ctx.createRadialGradient(0, 0, 8, 0, 0, t.w);
+            g.addColorStop(0, "#a09361");
+            g.addColorStop(.48, "#425d3c");
+            g.addColorStop(1, "rgba(31,48,47,.05)");
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, t.w * .62, t.h * .45, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "rgba(233,210,132,.36)";
+            ctx.beginPath();
+            ctx.ellipse(t.w * .08, -t.h * .03, t.w * .36, t.h * .2, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (t.type === "forest") {
+            ctx.fillStyle = "rgba(22,55,30,.9)";
+            for (let i = 0; i < 6; i++) {
+              ctx.beginPath();
+              ctx.moveTo(-t.w * .35 + i * t.w * .14, -t.h * .35);
+              ctx.lineTo(-t.w * .48 + i * t.w * .14, t.h * .38);
+              ctx.lineTo(-t.w * .18 + i * t.w * .14, t.h * .38);
+              ctx.closePath();
+              ctx.fill();
+            }
+          } else if (t.type === "road") {
+            ctx.fillStyle = "rgba(64,58,48,.7)";
+            roundRect(-t.w * .18, -t.h, t.w * .36, t.h * 2, 5);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(235,220,170,.28)";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, -t.h);
+            ctx.lineTo(0, t.h);
+            ctx.stroke();
+          } else if (t.type === "harbor" || t.type === "ship") {
+            ctx.fillStyle = t.type === "ship" ? "rgba(70,82,88,.86)" : "rgba(90,82,66,.76)";
+            roundRect(-t.w * .55, -t.h * .22, t.w * 1.1, t.h * .44, 6);
+            ctx.fill();
+            ctx.fillStyle = "rgba(230,240,242,.35)";
+            ctx.fillRect(-t.w * .4, -4, t.w * .8, 8);
+          } else if (t.type === "ruin") {
+            ctx.fillStyle = "rgba(74,70,66,.8)";
+            for (let i = 0; i < 4; i++) {
+              ctx.fillRect(-t.w * .45 + i * t.w * .24, -t.h * .45, t.w * .16, t.h * (.45 + ((t.seed + i * .17) % .28)));
+            }
+            ctx.fillStyle = "rgba(20,20,20,.35)";
+            ctx.fillRect(-t.w * .5, t.h * .2, t.w, t.h * .2);
+          } else if (t.type === "snow") {
+            ctx.fillStyle = "rgba(235,244,246,.74)";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, t.w * .55, t.h * .28, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(90,110,120,.35)";
+            ctx.stroke();
+          } else if (t.type === "trench") {
+            ctx.strokeStyle = "rgba(37,28,22,.86)";
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.moveTo(-t.w * .5, -t.h * .3);
+            ctx.lineTo(-t.w * .15, t.h * .2);
+            ctx.lineTo(t.w * .2, -t.h * .15);
+            ctx.lineTo(t.w * .5, t.h * .35);
+            ctx.stroke();
+          } else if (t.type === "fire") {
+            ctx.fillStyle = "rgba(255,90,40,.45)";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, t.w * .28, t.h * .22, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "rgba(255,209,102,.55)";
+            ctx.beginPath();
+            ctx.ellipse(0, -t.h * .08, t.w * .14, t.h * .13, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (t.type === "bunker" || t.type === "base") {
+            ctx.fillStyle = "rgba(55,64,62,.82)";
+            roundRect(-t.w / 2, -t.h / 2, t.w, t.h, 6);
+            ctx.fill();
+            ctx.fillStyle = "rgba(18,26,29,.9)";
+            for (let i = -2; i <= 2; i++) {
+              ctx.fillRect(i * t.w / 5 - 5, -t.h * .42, 10, t.h * .84);
+            }
+            ctx.fillStyle = "rgba(255,209,102,.5)";
+            ctx.fillRect(-t.w * .32, -t.h * .12, t.w * .64, 8);
+          } else {
+            ctx.strokeStyle = "rgba(190,214,173,.25)";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, t.w * .5, t.h * .22, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+
+      function drawCloud(c) {
+        ctx.save();
+        ctx.globalAlpha = c.a;
+        ctx.fillStyle = "#eaf7ff";
+        ctx.beginPath();
+        ctx.ellipse(c.x, c.y, c.s * .62, c.s * .22, .1, 0, Math.PI * 2);
+        ctx.ellipse(c.x - c.s * .2, c.y + 6, c.s * .34, c.s * .16, -.2, 0, Math.PI * 2);
+        ctx.ellipse(c.x + c.s * .26, c.y - 4, c.s * .4, c.s * .15, .2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawPlayer(p) {
+        drawAircraft(p.x, p.y, p.r, p.plane.color, p.plane.wing, -Math.PI / 2, true, p.inv > 0 && Math.floor(game.t / 4) % 2 === 0);
+        if (p.wingman > 0) {
+          drawAircraft(p.x - 58, p.y + 28, 17, "#49db9a", "#d8ffe9", -Math.PI / 2, true, false);
+          drawAircraft(p.x + 58, p.y + 28, 17, "#49db9a", "#d8ffe9", -Math.PI / 2, true, false);
+        }
+        if (p.shield > 0) {
+          ctx.strokeStyle = `rgba(88,199,255,${.25 + Math.sin(game.t * .15) * .12})`;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 42 + Math.sin(game.t * .12) * 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      function drawAircraft(x, y, r, body, wing, angle, player, blink) {
+        if (blink) return;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle + Math.PI / 2);
+        ctx.shadowColor = "rgba(0,0,0,.55)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 8;
+        const g = ctx.createLinearGradient(0, -r * 1.6, 0, r * 1.7);
+        g.addColorStop(0, "#ffffff");
+        g.addColorStop(.22, wing);
+        g.addColorStop(.58, body);
+        g.addColorStop(1, "#10181b");
+        ctx.fillStyle = g;
+        ctx.strokeStyle = "rgba(238,248,255,.7)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 1.5);
+        ctx.lineTo(r * .55, r * .15);
+        ctx.lineTo(r * 1.55, r * .55);
+        ctx.lineTo(r * .38, r * .72);
+        ctx.lineTo(r * .2, r * 1.38);
+        ctx.lineTo(0, r * .92);
+        ctx.lineTo(-r * .2, r * 1.38);
+        ctx.lineTo(-r * .38, r * .72);
+        ctx.lineTo(-r * 1.55, r * .55);
+        ctx.lineTo(-r * .55, r * .15);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = player ? "rgba(12,33,42,.78)" : "rgba(255,90,87,.45)";
+        ctx.beginPath();
+        ctx.ellipse(0, -r * .35, r * .25, r * .55, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.55)";
+        ctx.fillRect(-r * .08, -r * 1.18, r * .16, r * 1.7);
+        ctx.restore();
+      }
+
+      function drawEnemy(e) {
+        if (e.kind === "boss") {
+          drawBoss(e);
+          return;
+        }
+        const angle = Math.PI / 2 + Math.sin(e.phase * .045) * .18;
+        if (e.kind === "train") {
+          drawTrain(e);
+          return;
+        }
+        drawAircraft(e.x, e.y, e.r, e.color, "#c3c0ad", angle, false, false);
+        drawHealthArc(e);
+      }
+
+      function drawTurret(t) {
+        ctx.save();
+        ctx.translate(t.x, t.y);
+        ctx.rotate(t.rot);
+        ctx.shadowColor = "rgba(0,0,0,.45)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = t.type === "naval" ? "#6f858c" : t.type === "cannon" ? "#5f664d" : "#575f5f";
+        ctx.strokeStyle = "rgba(238,248,255,.42)";
+        ctx.lineWidth = 2;
+        ctx.fillRect(0, -7, t.r + 24, 14);
+        ctx.strokeRect(0, -7, t.r + 24, 14);
+        ctx.rotate(-t.rot);
+        ctx.beginPath();
+        ctx.arc(0, 0, t.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "rgba(18,24,26,.72)";
+        ctx.beginPath();
+        ctx.arc(0, 0, t.r * .52, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = t.type === "flak" ? "#ffd166" : "#ff8d5c";
+        ctx.fillRect(-t.r * .52, t.r * .58, t.r * 1.04 * (t.hp / t.maxHp), 5);
+        ctx.restore();
+      }
+
+      function drawTrain(e) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.shadowColor = "rgba(0,0,0,.55)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = "#4d5859";
+        roundRect(-38, -58, 76, 116, 6);
+        ctx.fill();
+        ctx.fillStyle = "#263034";
+        ctx.fillRect(-28, -42, 56, 32);
+        ctx.fillRect(-28, 12, 56, 32);
+        ctx.fillStyle = "#8a9492";
+        ctx.fillRect(-10, -70, 20, 54);
+        ctx.fillRect(-10, -10, 20, 60);
+        ctx.fillStyle = "#ff5a57";
+        ctx.beginPath();
+        ctx.arc(0, -10, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        drawHealthArc(e);
+      }
+
+      function drawBoss(e) {
+        if (e.bossType === "tank") {
+          drawTankBoss(e);
+          drawBossParts(e);
+          return;
+        }
+        if (e.bossType === "carrier") {
+          drawCarrierBoss(e);
+          drawBossParts(e);
+          return;
+        }
+        drawFortressBoss(e);
+        drawBossParts(e);
+      }
+
+      function drawBossParts(boss) {
+        if (!boss.parts) return;
+        for (const part of boss.parts) {
+          if (part.destroyed || part.hp <= 0) continue;
+          const pos = bossPartPosition(boss, part);
+          const a = Math.atan2(game.player.y - pos.y, game.player.x - pos.x);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.rotate(a);
+          ctx.fillStyle = boss.bossType === "carrier" ? "#8ea2a7" : boss.bossType === "tank" ? "#808765" : "#a45d5d";
+          ctx.strokeStyle = "rgba(255,244,184,.72)";
+          ctx.lineWidth = 3;
+          ctx.fillRect(0, -7, part.r + 24, 14);
+          ctx.strokeRect(0, -7, part.r + 24, 14);
+          ctx.rotate(-a);
+          ctx.beginPath();
+          ctx.arc(0, 0, part.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = "#11191d";
+          ctx.beginPath();
+          ctx.arc(0, 0, part.r * .48, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ff5a57";
+          ctx.fillRect(-part.r, part.r + 8, part.r * 2 * Math.max(0, part.hp / part.maxHp), 6);
+          ctx.restore();
+        }
+      }
+
+      function drawFortressBoss(e) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.scale(e.r / 118, e.r / 118);
+        ctx.shadowColor = "rgba(0,0,0,.6)";
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 12;
+        const g = ctx.createLinearGradient(0, -120, 0, 140);
+        g.addColorStop(0, "#f1d1c7");
+        g.addColorStop(.18, "#994544");
+        g.addColorStop(.7, "#4d2426");
+        g.addColorStop(1, "#161313");
+        ctx.fillStyle = g;
+        ctx.strokeStyle = "rgba(255,228,200,.75)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -126);
+        ctx.lineTo(45, -44);
+        ctx.lineTo(160, 18);
+        ctx.lineTo(72, 48);
+        ctx.lineTo(48, 126);
+        ctx.lineTo(0, 92);
+        ctx.lineTo(-48, 126);
+        ctx.lineTo(-72, 48);
+        ctx.lineTo(-160, 18);
+        ctx.lineTo(-45, -44);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "rgba(12,20,24,.82)";
+        ctx.beginPath();
+        ctx.ellipse(0, -54, 26, 52, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffd166";
+        [-86, -42, 42, 86].forEach(x => {
+          ctx.beginPath();
+          ctx.arc(x, 30, 13 + Math.sin(game.t * .12 + x) * 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.fillStyle = "rgba(255,90,87,.62)";
+        ctx.fillRect(-130, 6, 260, 10);
+        ctx.restore();
+      }
+
+      function drawTankBoss(e) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.scale(e.r / 96, e.r / 96);
+        ctx.shadowColor = "rgba(0,0,0,.55)";
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetY = 10;
+        ctx.fillStyle = "#2c3329";
+        roundRect(-118, -62, 236, 128, 10);
+        ctx.fill();
+        ctx.fillStyle = "#6f765b";
+        roundRect(-92, -76, 184, 138, 12);
+        ctx.fill();
+        ctx.fillStyle = "#4b543f";
+        roundRect(-54, -96, 108, 92, 10);
+        ctx.fill();
+        ctx.fillStyle = "#1a211b";
+        ctx.fillRect(-18, -142, 36, 82);
+        ctx.fillStyle = "#ffd166";
+        [-82, -48, -14, 20, 54, 88].forEach(x => {
+          ctx.beginPath();
+          ctx.arc(x, 60, 11, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.fillStyle = "rgba(255,90,87,.62)";
+        ctx.fillRect(-58, -32, 116, 9);
+        ctx.restore();
+      }
+
+      function drawCarrierBoss(e) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.scale(e.r / 128, e.r / 128);
+        ctx.shadowColor = "rgba(0,0,0,.55)";
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetY = 12;
+        const g = ctx.createLinearGradient(0, -150, 0, 170);
+        g.addColorStop(0, "#b3c5c7");
+        g.addColorStop(.35, "#526a73");
+        g.addColorStop(1, "#1b272b");
+        ctx.fillStyle = g;
+        ctx.strokeStyle = "rgba(236,248,255,.58)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -160);
+        ctx.lineTo(132, -92);
+        ctx.lineTo(112, 128);
+        ctx.lineTo(0, 174);
+        ctx.lineTo(-112, 128);
+        ctx.lineTo(-132, -92);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "rgba(20,28,32,.82)";
+        ctx.fillRect(-34, -118, 68, 242);
+        ctx.fillStyle = "#d9e6e8";
+        ctx.fillRect(54, -72, 34, 74);
+        ctx.fillStyle = "#ffd166";
+        [-74, -28, 28, 74].forEach(x => {
+          ctx.fillRect(x - 12, 54, 24, 36);
+        });
+        ctx.fillStyle = "rgba(255,90,87,.62)";
+        ctx.fillRect(-92, -18, 184, 10);
+        ctx.restore();
+      }
+
+      function drawHealthArc(e) {
+        if (e.maxHp < 80) return;
+        ctx.strokeStyle = "rgba(0,0,0,.55)";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.r + 8, -.8, Math.PI + .8);
+        ctx.stroke();
+        ctx.strokeStyle = e.hp / e.maxHp > .35 ? "#ffd166" : "#ff5a57";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.r + 8, -.8, -.8 + (Math.PI + 1.6) * (e.hp / e.maxHp));
+        ctx.stroke();
+      }
+
+      function drawPlayerBullet(b) {
+        ctx.save();
+        ctx.fillStyle = b.color;
+        if (b.type === "laser") {
+          ctx.fillRect(b.x - 5, b.y - 44, 10, 66);
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(b.x - 2, b.y - 44, 4, 66);
+        } else {
+          ctx.beginPath();
+          ctx.ellipse(b.x, b.y, b.r, b.r * 2.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawMissile(m) {
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.rotate(Math.atan2(m.vy, m.vx) + Math.PI / 2);
+        ctx.fillStyle = "#f4f7f7";
+        ctx.strokeStyle = "#ffd166";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -13);
+        ctx.lineTo(8, 8);
+        ctx.lineTo(0, 14);
+        ctx.lineTo(-8, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawEnemyBullet(b) {
+        ctx.save();
+        ctx.fillStyle = b.color;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.72)";
+        ctx.beginPath();
+        ctx.arc(b.x - b.r * .25, b.y - b.r * .25, Math.max(2, b.r * .32), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawPower(p) {
+        const def = powerDefs[p.type];
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = def.color;
+        ctx.strokeStyle = "#fff7d6";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4;
+          const r = i % 2 ? 13 : 20;
+          ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.rotate(-p.rot);
+        ctx.fillStyle = "#071014";
+        ctx.font = "800 10px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(def.label, 0, 1);
+        ctx.restore();
+      }
+
+      function drawParticle(p) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+        ctx.fillStyle = p.c;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(.5, p.r), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawTrails() {
+        if (!game) return;
+        for (const p of game.trails) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.life / 24) * .45;
+          ctx.fillStyle = p.c;
+          ctx.beginPath();
+          ctx.ellipse(p.x, p.y, p.r * .7, p.r * 1.8, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function drawVignette() {
+        const g = ctx.createRadialGradient(W / 2, H / 2, H * .2, W / 2, H / 2, H * .78);
+        g.addColorStop(0, "rgba(0,0,0,0)");
+        g.addColorStop(1, "rgba(0,0,0,.5)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      function drawTrainingDemo() {
+        const t = trainingTime;
+        const step = Math.floor((t / 180) % 5);
+        const px = W * .5 + Math.sin(t * .035) * W * .16;
+        const py = H * .74 + Math.sin(t * .05) * 24;
+
+        ctx.save();
+        ctx.globalAlpha = .72;
+        ctx.strokeStyle = "#58c7ff";
+        ctx.lineWidth = 5;
+        ctx.setLineDash([18, 18]);
+        ctx.beginPath();
+        for (let i = 0; i <= 80; i++) {
+          const y = H * .82 - i * 8;
+          const x = W * .5 + Math.sin(i * .16 + t * .035) * W * .16;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        drawAircraft(px, py, 34, selectedPlane.color, selectedPlane.wing, -Math.PI / 2, true, false);
+
+        if (step >= 1) {
+          for (let i = 0; i < 8; i++) {
+            drawPlayerBullet({ x: px + (i % 2 ? 10 : -10), y: py - 70 - i * 70 - (t * 7) % 70, r: 5, color: selectedPlane.color, type: "shot" });
+          }
+          drawAircraft(W * .5, H * .32, 46, "#9b7757", "#c3c0ad", Math.PI / 2, false, false);
+        }
+
+        if (step >= 2) {
+          const demoTurrets = [
+            { x: W * .32, y: H * .47, r: 34, hp: 48, maxHp: 70, rot: -Math.PI / 2, type: "cannon" },
+            { x: W * .68, y: H * .47, r: 34, hp: 24, maxHp: 70, rot: -Math.PI / 2, type: "cannon" }
+          ];
+          demoTurrets.forEach(drawTurret);
+          ctx.fillStyle = "rgba(244,247,247,.85)";
+          ctx.beginPath();
+          ctx.arc(W * .5, H * .5, 52 + Math.sin(t * .08) * 12, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255,209,102,.8)";
+          ctx.lineWidth = 5;
+          ctx.stroke();
+        }
+
+        if (step >= 3) {
+          for (let i = 0; i < 9; i++) {
+            const x = W * .24 + i * W * .065;
+            const y = H * .24 + ((t * 5 + i * 44) % 420);
+            drawEnemyBullet({ x, y, r: 10, color: i % 2 ? "#ff5a57" : "#ffd166" });
+          }
+        }
+
+        if (step >= 4) {
+          const boss = {
+            x: W * .5,
+            y: H * .18,
+            r: 300,
+            bossType: "fortress",
+            parts: makeBossParts("fortress", 300)
+          };
+          drawFortressBoss(boss);
+          drawBossParts(boss);
+        }
+
+        ctx.save();
+        ctx.fillStyle = "rgba(0,0,0,.5)";
+        ctx.fillRect(W * .32, H * .05, W * .36, 52);
+        ctx.fillStyle = "#ffd166";
+        ctx.font = "900 28px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText(`新兵训练 ${step + 1} / 5`, W * .5, H * .05 + 35);
+        ctx.restore();
+      }
+
+      function explode(x, y, color, count, scale) {
+        const room = Math.max(0, MAX_PARTICLES - game.particles.length);
+        for (let i = 0; i < Math.min(count, room); i++) {
+          const a = Math.random() * Math.PI * 2;
+          const sp = (1.6 + Math.random() * 8) * scale;
+          game.particles.push({
+            x, y,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp,
+            r: 2 + Math.random() * 6 * scale,
+            grow: .08 + Math.random() * .18,
+            c: Math.random() > .4 ? color : "#fff3b0",
+            life: 28 + Math.random() * 34,
+            maxLife: 62
+          });
+        }
+      }
+
+      function spark(x, y, color, count) {
+        explode(x, y, color, count, .42);
+      }
+
+      function nearestEnemy(x, y) {
+        let best = null;
+        let d = Infinity;
+        for (const e of game.enemies) {
+          if (e.kind === "boss" && e.parts) {
+            for (const part of livingBossParts(e)) {
+              const pos = bossPartPosition(e, part);
+              const dd = (pos.x - x) ** 2 + (pos.y - y) ** 2;
+              if (dd < d) {
+                d = dd;
+                best = pos;
+              }
+            }
+          }
+          const dd = (e.x - x) ** 2 + (e.y - y) ** 2;
+          if (dd < d) {
+            d = dd;
+            best = e;
+          }
+        }
+        for (const t of game.turrets) {
+          const dd = (t.x - x) ** 2 + (t.y - y) ** 2;
+          if (dd < d) {
+            d = dd;
+            best = t;
+          }
+        }
+        return best;
+      }
+
+      function updateHud() {
+        const p = game.player;
+        const scoreText = String(game.score).padStart(6, "0");
+        if (hudCache.score !== scoreText) {
+          scoreEl.textContent = scoreText;
+          hudCache.score = scoreText;
+        }
+        const stageText = game.mode === "training" ? `${currentMapTheme().name} 训练` : `${currentMapTheme().name} ${game.stage}`;
+        if (hudCache.stage !== stageText) {
+          stageEl.textContent = stageText;
+          hudCache.stage = stageText;
+        }
+        const lifeText = `${Math.max(0, p.hp)} / ${p.bombs}`;
+        if (hudCache.life !== lifeText) {
+          lifeEl.textContent = lifeText;
+          hudCache.life = lifeText;
+        }
+        const boss = game.enemies.find(e => e.kind === "boss");
+        const bossText = boss ? (boss.bossName || "锁定") : "--";
+        if (hudCache.bossText !== bossText) {
+          bossTextEl.textContent = bossText;
+          hudCache.bossText = bossText;
+        }
+        const bossWidth = `${boss ? Math.round(clamp(boss.hp / boss.maxHp * 100, 0, 100)) : 0}%`;
+        if (hudCache.bossWidth !== bossWidth) {
+          bossBarEl.style.width = bossWidth;
+          hudCache.bossWidth = bossWidth;
+        }
+        const chips = [
+          ["火力", p.power > 1],
+          ["护盾", p.shield > 0],
+          ["僚机", p.wingman > 0],
+          ["激光", p.laser > 0],
+          ["散弹", p.spread > 1],
+          ["导弹", p.missile > 0],
+          [p.skillCooldown > 0 ? `技能${Math.ceil(p.skillCooldown / 60)}` : p.plane.skillName, p.skillCooldown <= 0]
+        ];
+        const chipText = chips.map(([name, on]) => `${name}:${on ? 1 : 0}`).join("|");
+        if (hudCache.chips !== chipText) {
+          stripEl.innerHTML = chips.map(([name, on]) => `<span class="chip ${on ? "on" : ""}">${name}</span>`).join("");
+          hudCache.chips = chipText;
+        }
+      }
+
+      function hit(a, b, rr) {
+        return (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < rr ** 2;
+      }
+
+      function clamp(v, a, b) {
+        return Math.max(a, Math.min(b, v));
+      }
+
+      function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      function pointerPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches ? e.touches[0] : e;
+        return {
+          x: (touch.clientX - rect.left) / rect.width * W,
+          y: (touch.clientY - rect.top) / rect.height * H
+        };
+      }
+
+      window.addEventListener("keydown", (e) => {
+        keys.add(e.code);
+        if (game?.paused && ["Digit1", "Digit2", "Digit3", "Digit4"].includes(e.code)) buyUpgrade(Number(e.code.slice(-1)) - 1);
+        if (!game?.paused && selectedInputMode?.id === "keyboard" && e.code === "KeyK") fireSecondary();
+        if (!game?.paused && selectedInputMode?.id === "keyboard" && e.code === "KeyL") usePlaneSkill();
+        if (!game?.paused && selectedInputMode?.id === "keyboard" && e.code === "Semicolon") useBomb();
+        if (e.code === "KeyP" && game && state === "play") game.paused = !game.paused;
+        if (["KeyJ", "KeyK", "KeyL", "Semicolon", "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+      });
+      window.addEventListener("keyup", (e) => keys.delete(e.code));
+      canvas.addEventListener("pointerdown", (e) => {
+        if (game?.paused) {
+          const pos = pointerPos(e);
+          const hitButton = pauseButtons.find(btn => pos.x >= btn.x && pos.x <= btn.x + btn.w && pos.y >= btn.y && pos.y <= btn.y + btn.h);
+          if (hitButton) buyUpgrade(hitButton.index);
+          return;
+        }
+        const now = performance.now();
+        pointer.lastTap = now;
+        pointer.active = true;
+        Object.assign(pointer, pointerPos(e));
+        canvas.setPointerCapture(e.pointerId);
+      });
+      canvas.addEventListener("pointermove", (e) => {
+        if (!pointer.active) return;
+        Object.assign(pointer, pointerPos(e));
+      });
+      canvas.addEventListener("pointerup", () => pointer.active = false);
+      canvas.addEventListener("pointercancel", () => pointer.active = false);
+      touchFire.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        touchFireHeld = true;
+      });
+      touchFire.addEventListener("pointerup", () => touchFireHeld = false);
+      touchFire.addEventListener("pointercancel", () => touchFireHeld = false);
+      touchSecondary.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        touchSecondaryHeld = true;
+        if (selectedInputMode?.id === "touch") fireSecondary();
+      });
+      touchSecondary.addEventListener("pointerup", () => touchSecondaryHeld = false);
+      touchSecondary.addEventListener("pointercancel", () => touchSecondaryHeld = false);
+      touchSkill.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (selectedInputMode?.id === "touch") usePlaneSkill();
+      });
+      touchBomb.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (selectedInputMode?.id === "touch") useBomb();
+      });
+      startBtn.addEventListener("click", start);
+      window.addEventListener("resize", resizeCanvasBacking);
+
+      renderPlaneSelect();
+      renderModeSelect();
+      renderDifficultySelect();
+      renderStageSelect();
+      renderInputSelect();
+      updateTrainingText();
+      resizeCanvasBacking();
+      game = newGame();
+      updateHud();
+      last = performance.now();
+      raf = requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
