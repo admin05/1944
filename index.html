@@ -1641,7 +1641,10 @@
         game.supplyDrop = false;
         game.restTimer = 80;
         game.enemyBullets.length = 0;
-        game.bossWarnings.push({ name: type.name, bossType: type.id, life: 185, maxLife: 185, r: type.r || 300, color: type.color });
+        game.bossWarnings.push({ name: type.name, bossType: type.id, life: 210, maxLife: 210, r: type.r || 300, color: type.color, introPhase: 0 });
+        shake = Math.max(shake, 12);
+        flash = 28;
+        slow = .55;
         game.enemies = game.enemies.filter(e => e.kind === "boss").slice(0, 1);
         game.enemies.push({
           kind: "boss",
@@ -2471,62 +2474,156 @@
       function drawArcadeMapLayer(theme) {
         const s = game.scroll % H;
         ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.globalAlpha = .62;
         if (theme.id === "pearl") {
           ctx.fillStyle = "rgba(34,72,72,.82)";
           for (let y = -H + s; y < H * 1.4; y += 520) {
+            // ocean patches
             ctx.beginPath();
-            ctx.ellipse(W * .16, y + 180, 250, 92, -.25, 0, Math.PI * 2);
-            ctx.ellipse(W * .86, y + 390, 290, 110, .22, 0, Math.PI * 2);
+            ctx.ellipse(W * .16, y + 180, 280, 100, -.25, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = "rgba(78,88,92,.72)";
-            roundRect(W * .45, y + 245, 320, 56, 10);
+            ctx.beginPath();
+            ctx.ellipse(W * .84, y + 390, 310, 120, .22, 0, Math.PI * 2);
             ctx.fill();
-            roundRect(W * .55, y + 335, 380, 62, 10);
+            // ship hull at center
+            ctx.fillStyle = "rgba(55,68,72,.85)";
+            roundRect(W * .44, y + 230, 280, 70, 8);
+            ctx.fill();
+            ctx.fillStyle = "rgba(68,82,88,.7)";
+            roundRect(W * .52, y + 310, 340, 74, 8);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(220,235,240,.2)";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(W * .44, y + 230, 280, 70);
+            ctx.strokeRect(W * .52, y + 310, 340, 74);
+            // mast/flag
+            ctx.fillStyle = "rgba(200,180,80,.42)";
+            ctx.fillRect(W * .46, y + 190, 6, 52);
+            ctx.fillRect(W * .62, y + 285, 6, 48);
+            // wave foam
+            ctx.fillStyle = "rgba(255,255,255,.08)";
+            ctx.beginPath();
+            ctx.ellipse(W * .36, y + 280, 80, 12, .1, 0, Math.PI * 2);
+            ctx.ellipse(W * .72, y + 150, 60, 10, -.1, 0, Math.PI * 2);
             ctx.fill();
           }
-        } else if (theme.id === "berlin" || theme.id === "stalingrad") {
-          ctx.strokeStyle = "rgba(210,210,200,.16)";
-          ctx.lineWidth = 6;
-          for (let y = -H + s; y < H * 1.4; y += 170) {
+        } else if (theme.id === "berlin") {
+          ctx.strokeStyle = "rgba(210,200,180,.12)";
+          ctx.lineWidth = 5;
+          for (let y = -H + s; y < H * 1.4; y += 140) {
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(W, y + 40);
+            ctx.lineTo(W, y + 30);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, y + 60);
+            ctx.lineTo(W, y + 80);
             ctx.stroke();
           }
-          for (let x = 160; x < W; x += 260) {
+          ctx.fillStyle = "rgba(60,45,30,.34)";
+          for (let y = -H + s; y < H * 1.4; y += 280) {
+            roundRect(W * .12, y + 50, W * .28, 140, 6);
+            ctx.fill();
+            roundRect(W * .58, y + 180, W * .32, 160, 6);
+            ctx.fill();
+            ctx.fillStyle = "rgba(210,180,120,.15)";
+            ctx.font = "900 22px Trebuchet MS";
+            ctx.fillText("废墟街区", W * .26, y + 120);
+            ctx.fillText("废墟街区", W * .74, y + 260);
+            ctx.fillStyle = "rgba(60,45,30,.34)";
+          }
+        } else if (theme.id === "stalingrad") {
+          ctx.fillStyle = "rgba(30,18,14,.4)";
+          for (let y = -H + s; y < H * 1.4; y += 200) {
             ctx.beginPath();
-            ctx.moveTo(x, -80);
-            ctx.lineTo(x - 180, H + 80);
+            ctx.ellipse(W * .22, y + 80, 140, 36, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(W * .74, y + 160, 170, 42, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(200,180,130,.1)";
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(W * .18, y + 20);
+            ctx.lineTo(W * .18, y + 140);
             ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(W * .82, y + 110);
+            ctx.lineTo(W * .82, y + 220);
+            ctx.stroke();
+            ctx.fillStyle = "rgba(255,90,40,.18)";
+            ctx.font = "bold 18px Trebuchet MS";
+            ctx.fillStyle = "rgba(255,180,100,.3)";
+            ctx.fillText("战火区", W * .22, y + 40);
+            ctx.fillText("战火区", W * .74, y + 120);
           }
         } else if (theme.id === "moscow") {
-          ctx.fillStyle = "rgba(235,244,246,.22)";
-          for (let y = -H + s; y < H * 1.4; y += 260) {
-            ctx.fillRect(W * .18, y, W * .64, 34);
-            ctx.fillRect(W * .34, y + 120, W * .22, 110);
+          ctx.fillStyle = "rgba(230,240,245,.2)";
+          for (let y = -H + s; y < H * 1.4; y += 280) {
+            ctx.fillRect(W * .12, y, W * .72, 40);
+            ctx.fillStyle = "rgba(35,50,55,.28)";
+            roundRect(W * .28, y + 80, W * .34, 110, 8);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(200,220,225,.12)";
+            ctx.lineWidth = 3;
+            roundRect(W * .28, y + 80, W * .34, 110, 8);
+            ctx.stroke();
+            ctx.fillStyle = "rgba(230,240,245,.2)";
+          }
+          // tree lines
+          ctx.fillStyle = "rgba(22,50,35,.3)";
+          for (let y = -H + s; y < H * 1.4; y += 140) {
+            ctx.beginPath();
+            ctx.arc(W * .08, y + 60, 26, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(W * .92, y + 20, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(W * .92, y + 100, 28, 0, Math.PI * 2);
+            ctx.fill();
           }
         } else if (theme.id === "britain") {
-          for (let y = -H + s; y < H * 1.4; y += 240) {
-            ctx.fillStyle = "rgba(65,95,44,.45)";
-            ctx.fillRect(W * .08, y, W * .36, 160);
-            ctx.fillStyle = "rgba(122,118,64,.34)";
-            ctx.fillRect(W * .48, y + 28, W * .42, 130);
-            ctx.strokeStyle = "rgba(230,230,180,.18)";
+          for (let y = -H + s; y < H * 1.4; y += 200) {
+            ctx.fillStyle = "rgba(55,85,38,.4)";
+            ctx.fillRect(W * .04, y, W * .4, 180);
+            ctx.fillStyle = "rgba(100,96,52,.3)";
+            ctx.fillRect(W * .48, y + 20, W * .44, 160);
+            ctx.strokeStyle = "rgba(190,200,160,.1)";
             ctx.lineWidth = 4;
-            ctx.strokeRect(W * .08, y, W * .36, 160);
-            ctx.strokeRect(W * .48, y + 28, W * .42, 130);
+            ctx.strokeRect(W * .04, y, W * .4, 180);
+            ctx.strokeRect(W * .48, y + 20, W * .44, 160);
+            ctx.fillStyle = "rgba(150,180,110,.22)";
+            ctx.font = "bold 18px Trebuchet MS";
+            ctx.fillText("农田", W * .24, y + 90);
+            ctx.fillText("农田", W * .7, y + 100);
+          }
+          ctx.fillStyle = "rgba(30,55,45,.18)";
+          for (let x = 80; x < W; x += 180) {
+            ctx.beginPath();
+            ctx.moveTo(x + s * .08, -20);
+            ctx.lineTo(x - 40 + s * .08, H + 20);
+            ctx.stroke();
           }
         } else {
           ctx.fillStyle = "rgba(18,55,28,.36)";
-          for (let y = -H + s; y < H * 1.4; y += 380) {
+          for (let y = -H + s; y < H * 1.4; y += 300) {
             ctx.beginPath();
-            ctx.moveTo(0, y + 180);
-            ctx.bezierCurveTo(W * .22, y + 40, W * .55, y + 310, W, y + 130);
-            ctx.lineTo(W, y + 280);
-            ctx.bezierCurveTo(W * .62, y + 460, W * .28, y + 210, 0, y + 360);
+            ctx.moveTo(0, y + 140);
+            ctx.bezierCurveTo(W * .18, y, W * .42, y + 280, W, y + 100);
+            ctx.lineTo(W, y + 310);
+            ctx.bezierCurveTo(W * .55, y + 430, W * .22, y + 170, 0, y + 300);
             ctx.closePath();
             ctx.fill();
+            ctx.fillStyle = "rgba(30,70,38,.18)";
+            for (let t = 0; t < 5; t++) {
+              ctx.beginPath();
+              ctx.arc(W * (.12 + t * .18), y + 80 + t * 30, 18 + t * 5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.fillStyle = "rgba(18,55,28,.36)";
           }
         }
         ctx.restore();
@@ -3047,23 +3144,69 @@
 
       function drawBossWarning(w) {
         const a = Math.max(0, w.life / w.maxLife);
+        const progress = 1 - a;
         ctx.save();
-        ctx.globalAlpha = Math.min(.72, .18 + a * .6);
-        ctx.fillStyle = "rgba(0,0,0,.72)";
-        ctx.beginPath();
-        ctx.ellipse(W / 2, 110 + (1 - a) * 120, Math.max(180, w.r * .75), Math.max(48, w.r * .18), 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = w.color || "#ff5a57";
-        ctx.lineWidth = 4;
-        ctx.setLineDash([22, 16]);
-        ctx.strokeRect(46, 74, W - 92, 88);
-        ctx.setLineDash([]);
-        ctx.fillStyle = "#ffd166";
-        ctx.font = "900 34px Trebuchet MS";
-        ctx.textAlign = "center";
-        ctx.fillText("大型目标接近", W / 2, 122);
-        ctx.font = "800 22px Trebuchet MS";
-        ctx.fillText(w.name, W / 2, 150);
+
+        // Phase 1: flashing red WARNING (0~40%)
+        if (progress < .4) {
+          const p1 = progress / .4;
+          const blink = Math.floor(p1 * 14) % 2;
+          if (blink) {
+            ctx.fillStyle = "rgba(255,0,0,.18)";
+            ctx.fillRect(0, 0, W, H);
+          }
+          ctx.fillStyle = `rgba(255, 50, 40, ${.35 + Math.sin(p1 * 30) * .22})`;
+          ctx.font = `900 ${52 + Math.sin(p1 * 16) * 6}px Trebuchet MS`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("⚠ WARNING ⚠", W / 2, H * .35);
+          ctx.font = "800 28px Trebuchet MS";
+          ctx.fillStyle = "#ffd166";
+          ctx.fillText("大型目标接近", W / 2, H * .46);
+        }
+
+        // Phase 2: shadow descends from top (40%~75%)
+        if (progress >= .4 && progress < .75) {
+          const p2 = (progress - .4) / .35;
+          const shadowR = Math.max(180, w.r * .75);
+          const shadowH = Math.max(48, w.r * .18);
+          const shadowCenterY = 40 + p2 * 130;
+
+          ctx.fillStyle = "rgba(0,0,0,.72)";
+          ctx.beginPath();
+          ctx.ellipse(W / 2, shadowCenterY, shadowR * (1 + p2 * .08), shadowH * (1 + p2 * .15), 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(255,90,87,.12)";
+          ctx.beginPath();
+          ctx.ellipse(W / 2, shadowCenterY + 60, shadowR * .55, shadowH * .4, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#ff5a57";
+          ctx.font = "900 26px Trebuchet MS";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("—— 进入战区 ——", W / 2, shadowCenterY + 80);
+
+          // scan line effect
+          ctx.fillStyle = `rgba(255,200,150,${.08 + Math.sin(p2 * 22) * .06})`;
+          ctx.fillRect(W * .08, shadowCenterY - shadowH * .6 + p2 * 20, W * .84, 6);
+        }
+
+        // Phase 3: name reveal + roar (75%~100%)
+        if (progress >= .75) {
+          const p3 = (progress - .75) / .25;
+          ctx.fillStyle = `rgba(255, 200, 100, ${p3 * .18})`;
+          ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = `rgba(255, 209, 102, ${p3 * .82})`;
+          ctx.font = `900 ${24 + p3 * 18}px Trebuchet MS`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(w.name, W / 2, H * .24 + (1 - p3) * 60);
+          ctx.fillStyle = `rgba(238, 248, 255, ${p3 * .5})`;
+          ctx.font = "800 18px Trebuchet MS";
+          ctx.fillText("迎击开始", W / 2, H * .36);
+        }
+
         ctx.restore();
       }
 
