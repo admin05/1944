@@ -1492,7 +1492,7 @@
           else if (strength > .45) spawnTrain(danger);
           else spawnScoutSquad(danger);
           game.spawnTimer = Math.max(72, 128 - danger * 4 - strength * 24 - Math.random() * 10);
-        } else if (boss && game.spawnTimer <= 0 && game.restTimer <= 0 && minions < minionCap) {
+        } else if (boss && !boss.ace && game.spawnTimer <= 0 && game.restTimer <= 0 && minions < minionCap) {
           Math.random() > .45 ? spawnScoutSquad(danger) : spawnDivePair(danger);
           game.spawnTimer = game.stage === 1 ? 145 - strength * 30 + Math.random() * 35 : Math.max(34, 72 - strength * 18 - game.stage * 5 + Math.random() * 18);
         } else if (game.spawnTimer <= 0) {
@@ -1669,7 +1669,7 @@
         showBossIntro(type);
         sfx("boss");
         if (type.id !== "ace") spawnBossTurrets(type.id);
-        spawnBossSupportWave();
+        if (type.id !== "ace") spawnBossSupportWave();
       }
 
       function spawnBossTurrets(bossType) {
@@ -1838,10 +1838,10 @@
             // ace main fire timer
             e.aceFireTimer -= dt;
             if (e.aceFireTimer <= 0) {
-              e.aceFireTimer = Math.max(6, 24 - e.aceMainLevel * 2.5 - e.aceLevel * 1.5);
-              const p = game.player;
-              const count = 1 + Math.floor((e.aceMainLevel - 1) / 2);
-              for (let i = 0; i < count; i++) {
+              e.aceFireTimer = Math.max(3.2, 12 - e.aceLevel * 1.2 - e.aceMainLevel * 0.45 - (ap.shot || 8) * 0.18);
+             const p = game.player;
+             const count = 1 + Math.floor((e.aceMainLevel - 1) / 2);
+             for (let i = 0; i < count; i++) {
                 const off = i - (count - 1) / 2;
                 addEnemyBullet(e.x + off * 10, e.y + 28, Math.atan2(p.y - e.y, p.x - e.x + off * 6), 5 + e.aceMainLevel * .3, 9, ap.color);
               }
