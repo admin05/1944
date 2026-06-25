@@ -989,13 +989,13 @@
       function seedTerrain() {
         const arr = [];
         const theme = currentMapTheme();
-        for (let i = 0; i < 44; i++) {
+        for (let i = 0; i < 32; i++) {
           const type = theme.terrain[Math.floor(Math.random() * theme.terrain.length)];
           arr.push({
             x: Math.random() * W,
             y: Math.random() * H,
-            w: 44 + Math.random() * 118,
-            h: 34 + Math.random() * 130,
+            w: 58 + Math.random() * 150,
+            h: 46 + Math.random() * 160,
             type,
             rot: Math.random() * Math.PI,
             seed: Math.random()
@@ -1641,10 +1641,10 @@
         game.supplyDrop = false;
         game.restTimer = 80;
         game.enemyBullets.length = 0;
-        game.bossWarnings.push({ name: type.name, bossType: type.id, life: 210, maxLife: 210, r: type.r || 300, color: type.color, introPhase: 0 });
-        shake = Math.max(shake, 12);
-        flash = 28;
-        slow = .55;
+        game.bossWarnings.push({ name: type.name, bossType: type.id, life: 250, maxLife: 250, r: type.r || 300, color: type.color, introPhase: 0 });
+        shake = Math.max(shake, 20);
+        flash = 34;
+        slow = .45;
         game.enemies = game.enemies.filter(e => e.kind === "boss").slice(0, 1);
         game.enemies.push({
           kind: "boss",
@@ -2528,10 +2528,11 @@
             ctx.fill();
             roundRect(W * .58, y + 180, W * .32, 160, 6);
             ctx.fill();
-            ctx.fillStyle = "rgba(210,180,120,.15)";
-            ctx.font = "900 22px Trebuchet MS";
-            ctx.fillText("废墟街区", W * .26, y + 120);
-            ctx.fillText("废墟街区", W * .74, y + 260);
+            ctx.fillStyle = "rgba(20,18,16,.28)";
+            for (let i = 0; i < 5; i++) {
+              ctx.fillRect(W * .14 + i * W * .045, y + 62, W * .018, 104);
+              ctx.fillRect(W * .6 + i * W * .05, y + 198, W * .02, 122);
+            }
             ctx.fillStyle = "rgba(60,45,30,.34)";
           }
         } else if (theme.id === "stalingrad") {
@@ -2553,11 +2554,13 @@
             ctx.moveTo(W * .82, y + 110);
             ctx.lineTo(W * .82, y + 220);
             ctx.stroke();
-            ctx.fillStyle = "rgba(255,90,40,.18)";
-            ctx.font = "bold 18px Trebuchet MS";
-            ctx.fillStyle = "rgba(255,180,100,.3)";
-            ctx.fillText("战火区", W * .22, y + 40);
-            ctx.fillText("战火区", W * .74, y + 120);
+            ctx.fillStyle = "rgba(255,130,60,.22)";
+            ctx.beginPath();
+            ctx.ellipse(W * .22, y + 42, 34, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(W * .74, y + 122, 42, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
           }
         } else if (theme.id === "moscow") {
           ctx.fillStyle = "rgba(230,240,245,.2)";
@@ -2595,10 +2598,18 @@
             ctx.lineWidth = 4;
             ctx.strokeRect(W * .04, y, W * .4, 180);
             ctx.strokeRect(W * .48, y + 20, W * .44, 160);
-            ctx.fillStyle = "rgba(150,180,110,.22)";
-            ctx.font = "bold 18px Trebuchet MS";
-            ctx.fillText("农田", W * .24, y + 90);
-            ctx.fillText("农田", W * .7, y + 100);
+            ctx.strokeStyle = "rgba(220,225,170,.13)";
+            ctx.lineWidth = 3;
+            for (let i = 1; i < 4; i++) {
+              ctx.beginPath();
+              ctx.moveTo(W * .04 + i * W * .1, y);
+              ctx.lineTo(W * .04 + i * W * .1, y + 180);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(W * .48 + i * W * .11, y + 20);
+              ctx.lineTo(W * .48 + i * W * .11, y + 180);
+              ctx.stroke();
+            }
           }
           ctx.fillStyle = "rgba(30,55,45,.18)";
           for (let x = 80; x < W; x += 180) {
@@ -3146,65 +3157,52 @@
         const a = Math.max(0, w.life / w.maxLife);
         const progress = 1 - a;
         ctx.save();
+        ctx.globalCompositeOperation = "screen";
 
-        // Phase 1: flashing red WARNING (0~40%)
-        if (progress < .4) {
-          const p1 = progress / .4;
-          const blink = Math.floor(p1 * 14) % 2;
-          if (blink) {
-            ctx.fillStyle = "rgba(255,0,0,.18)";
-            ctx.fillRect(0, 0, W, H);
-          }
-          ctx.fillStyle = `rgba(255, 50, 40, ${.35 + Math.sin(p1 * 30) * .22})`;
-          ctx.font = `900 ${52 + Math.sin(p1 * 16) * 6}px Trebuchet MS`;
+        if (progress < .35) {
+          const p1 = progress / .35;
+          const blink = Math.floor(game.t / 6) % 2;
+          if (blink) ctx.fillStyle = "rgba(255,0,0,.15)", ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = `rgba(255, 72, 52, ${.28 + p1 * .24})`;
+          ctx.font = `900 ${54 + p1 * 8}px Trebuchet MS`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText("⚠ WARNING ⚠", W / 2, H * .35);
-          ctx.font = "800 28px Trebuchet MS";
-          ctx.fillStyle = "#ffd166";
-          ctx.fillText("大型目标接近", W / 2, H * .46);
+          ctx.fillText("WARNING", W / 2, H * .3);
+          ctx.fillStyle = `rgba(255, 209, 102, ${.4 + p1 * .2})`;
+          ctx.font = "800 22px Trebuchet MS";
+          ctx.fillText("敌方大型目标逼近", W / 2, H * .38);
         }
 
-        // Phase 2: shadow descends from top (40%~75%)
-        if (progress >= .4 && progress < .75) {
-          const p2 = (progress - .4) / .35;
-          const shadowR = Math.max(180, w.r * .75);
-          const shadowH = Math.max(48, w.r * .18);
-          const shadowCenterY = 40 + p2 * 130;
-
-          ctx.fillStyle = "rgba(0,0,0,.72)";
+        if (progress >= .18) {
+          const p2 = clamp((progress - .18) / .62, 0, 1);
+          const shadowY = -40 + p2 * 250;
+          const shadowW = Math.max(W * .35, w.r * .95 + p2 * W * .14);
+          const shadowH = Math.max(42, w.r * .2 + p2 * 56);
+          ctx.fillStyle = "rgba(0,0,0,.82)";
           ctx.beginPath();
-          ctx.ellipse(W / 2, shadowCenterY, shadowR * (1 + p2 * .08), shadowH * (1 + p2 * .15), 0, 0, Math.PI * 2);
+          ctx.ellipse(W / 2, shadowY, shadowW, shadowH, 0, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = "rgba(255,90,87,.12)";
+          ctx.fillStyle = "rgba(255,80,80,.12)";
           ctx.beginPath();
-          ctx.ellipse(W / 2, shadowCenterY + 60, shadowR * .55, shadowH * .4, 0, 0, Math.PI * 2);
+          ctx.ellipse(W / 2, shadowY + 56, shadowW * .58, shadowH * .48, 0, 0, Math.PI * 2);
           ctx.fill();
-
-          ctx.fillStyle = "#ff5a57";
-          ctx.font = "900 26px Trebuchet MS";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText("—— 进入战区 ——", W / 2, shadowCenterY + 80);
-
-          // scan line effect
-          ctx.fillStyle = `rgba(255,200,150,${.08 + Math.sin(p2 * 22) * .06})`;
-          ctx.fillRect(W * .08, shadowCenterY - shadowH * .6 + p2 * 20, W * .84, 6);
+          ctx.strokeStyle = "rgba(255,80,80,.45)";
+          ctx.lineWidth = 5;
+          ctx.setLineDash([20, 14]);
+          ctx.beginPath();
+          ctx.moveTo(W * .07, shadowY + 110);
+          ctx.lineTo(W * .93, shadowY + 110);
+          ctx.stroke();
+          ctx.setLineDash([]);
         }
 
-        // Phase 3: name reveal + roar (75%~100%)
-        if (progress >= .75) {
-          const p3 = (progress - .75) / .25;
-          ctx.fillStyle = `rgba(255, 200, 100, ${p3 * .18})`;
+        if (progress >= .62) {
+          const p3 = clamp((progress - .62) / .38, 0, 1);
+          ctx.fillStyle = `rgba(255, 209, 102, ${p3 * .12})`;
           ctx.fillRect(0, 0, W, H);
-          ctx.fillStyle = `rgba(255, 209, 102, ${p3 * .82})`;
-          ctx.font = `900 ${24 + p3 * 18}px Trebuchet MS`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(w.name, W / 2, H * .24 + (1 - p3) * 60);
-          ctx.fillStyle = `rgba(238, 248, 255, ${p3 * .5})`;
-          ctx.font = "800 18px Trebuchet MS";
-          ctx.fillText("迎击开始", W / 2, H * .36);
+          ctx.fillStyle = `rgba(255, 240, 190, ${p3})`;
+          ctx.font = `900 ${22 + p3 * 14}px Trebuchet MS`;
+          ctx.fillText(w.name, W / 2, H * .2 + (1 - p3) * 28);
         }
 
         ctx.restore();
