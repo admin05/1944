@@ -2684,7 +2684,7 @@
       function drawBoss(e) {
         if (e.ace) {
           const ap = e.acePlane || planeTypes[0];
-          drawAircraft(e.x, e.y, e.r + e.aceLevel * 4, ap.color, ap.wing, -Math.PI / 2, true, false);
+          drawAircraft(e.x, e.y, e.r + e.aceLevel * 4, ap.color, ap.wing, Math.PI / 2, false, false);
           ctx.save();
           ctx.strokeStyle = "#ffd166";
           ctx.globalAlpha = .6 + Math.sin(game.t * .08) * .2;
