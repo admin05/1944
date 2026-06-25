@@ -237,7 +237,7 @@
 
     .stage-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 6px;
       margin: 0 0 10px;
     }
@@ -546,8 +546,7 @@
         inset: 0;
         width: 100%;
         height: 100%;
-        transform: none;
-        object-fit: fill;
+        object-fit: cover;
       }
 
       .overlay {
@@ -783,15 +782,16 @@
         heal: { label: "维修", color: "#ff5a57" },
         bomb: { label: "炸弹", color: "#b7ff5a" }
       };
-      const MAX_ENEMY_BULLETS = 46;
       const BASE_ACTIVE_MINIONS = 6;
       const FIRST_BOSS_SUPPORT_MINIONS = 2;
       const LATER_BOSS_SUPPORT_MINIONS = 8;
       const LATER_BOSS_INITIAL_SUPPORT = 6;
       const BOSS_WARNING_TIME = 820;
       const BOSS_SPAWN_TIME = 950;
-      const MAX_PARTICLES = 55;
-      const MAX_TRAILS = 24;
+      const MAX_PARTICLES = 42;
+      const MAX_TRAILS = 18;
+      const MAX_ENEMY_BULLETS = 38;
+      const IS_MOBILE = window.innerWidth <= 860;
       const difficulties = [
         { id: "normal", name: "普通", enemyCap: 6, bullet: 1, hp: 1, drop: .55, shieldDrop: .28 },
         { id: "hard", name: "困难", enemyCap: 7, bullet: 1.22, hp: 1.18, drop: .42, shieldDrop: .2 },
@@ -802,7 +802,8 @@
         { id: "pearl", name: "珍珠港", sky: ["#1d4e67", "#2f8c9a", "#31594f"], terrain: ["harbor", "ship", "island"], cloud: "#eaf7ff" },
         { id: "berlin", name: "柏林", sky: ["#363637", "#5a5048", "#2c2c2f"], terrain: ["ruin", "road", "base"], cloud: "#d8d4cc" },
         { id: "moscow", name: "莫斯科", sky: ["#566a72", "#c7d6d8", "#6c7a80"], terrain: ["snow", "road", "base"], cloud: "#ffffff" },
-        { id: "stalingrad", name: "斯大林格勒", sky: ["#332f2d", "#6a5143", "#2b2928"], terrain: ["trench", "ruin", "fire"], cloud: "#d6c7b7" }
+        { id: "stalingrad", name: "斯大林格勒", sky: ["#332f2d", "#6a5143", "#2b2928"], terrain: ["trench", "ruin", "fire"], cloud: "#d6c7b7" },
+        { id: "britain", name: "大不列颠", sky: ["#69849e", "#b3cbd6", "#5685a0"], terrain: ["farm", "road", "base"], cloud: "#f2f8ff" }
       ];
       const inputModes = [
         { id: "keyboard", name: "键盘鼠标", training: "键盘鼠标登记：WASD / 方向键移动，J 主炮，K 副武器，L 专属技能，分号键投弹，P 暂停。" },
@@ -1409,9 +1410,9 @@
         const p = game.player;
         return [
           { key: "mainLevel", name: "主炮强化", desc: "提高主炮伤害、射速和弹数。", level: p.mainLevel, max: 5, cost: 900 + p.mainLevel * 650 },
-          { key: "secondaryLevel", name: "副武器强化", desc: "提高副武器伤害并缩短副武器间隔。", level: p.secondaryLevel, max: 5, cost: 1100 + p.secondaryLevel * 700 },
-          { key: "skillLevel", name: `${p.plane.skillName}强化`, desc: "强化当前飞机专属技能效果。", level: p.skillLevel, max: 5, cost: 1400 + p.skillLevel * 850 },
-          { key: "cooldownLevel", name: "冷却训练", desc: "缩短专属技能冷却。", level: p.cooldownLevel, max: 4, cost: 1200 + p.cooldownLevel * 900 }
+          { key: "secondaryLevel", name: "副武器强化", desc: "提高副武器伤害并缩短副武器间隔。", level: p.secondaryLevel, max: 5, cost: 1800 + p.secondaryLevel * 1200 },
+          { key: "skillLevel", name: `${p.plane.skillName}强化`, desc: "强化当前飞机专属技能效果。", level: p.skillLevel, max: 5, cost: 2400 + p.skillLevel * 1600 },
+          { key: "cooldownLevel", name: "冷却训练", desc: "缩短专属技能冷却。", level: p.cooldownLevel, max: 4, cost: 2000 + p.cooldownLevel * 1500 }
         ];
       }
 
@@ -1625,7 +1626,12 @@
           if (stage === 4) {
             return { id: "tank", name: "虎式", hp: 5600, r: 430, y: -470, vy: 1.28, color: "#667052", score: 7400, intro: "莫斯科前线的重装突击坦克，正面装甲厚，双联主炮会持续逼退你。绕开正面炮口，从两侧切入。" };
           }
-          return { id: "tank", name: "豹式", hp: 5900, r: 440, y: -470, vy: 1.22, color: "#6d785d", score: 7800, intro: "斯大林格勒战线的机动型坦克，转向更快，炮台压制也更凶。别停在正前方，边躲边拆它的装甲模块。" };
+          if (stage === 5) {
+            return { id: "tank", name: "豹式", hp: 5900, r: 440, y: -470, vy: 1.22, color: "#6d785d", score: 7800, intro: "斯大林格勒战线的机动型坦克，转向更快，炮台压制也更凶。别停在正前方，边躲边拆它的装甲模块。" };
+          }
+          const aceIdx = Math.abs(Math.floor(game.t / game.t || 1)) % 6;
+          const acePlane = planeTypes[aceIdx];
+          return { id: "ace", name: `王牌·${acePlane.name}`, hp: 2800, r: 36, y: -80, vy: 2.6, color: acePlane.color, score: 12000, intro: `大不列颠上空，敌方王牌飞行员驾驶\"${acePlane.name}\"拦截。他能使用失传的\"${acePlane.skillName}\"，而且有4条命——每次击落他都会升级。` };
         })();
         game.bossSpawned = true;
         game.supplyDrop = false;
@@ -1646,12 +1652,16 @@
           fire: 60,
           score: type.score,
           color: type.color,
+          ace: type.id === "ace",
+          acePlane: type.id === "ace" ? planeTypes[Math.abs(Math.floor((game.stage - 6) / game.stage * 10)) % 6] : null,
+          aceLives: type.id === "ace" ? 4 : 0,
+          aceLevel: type.id === "ace" ? 1 : 0,
           phase: 0,
           parts: makeBossParts(type.id, type.r)
         });
         showBossIntro(type);
         sfx("boss");
-        spawnBossTurrets(type.id);
+        if (type.id !== "ace") spawnBossTurrets(type.id);
         spawnBossSupportWave();
       }
 
@@ -1667,6 +1677,7 @@
       }
 
       function makeBossParts(bossType, r) {
+        if (bossType === "ace") return [];
         const layout = bossType === "carrier"
           ? [[-.42, -.18, "舰艏炮"], [-.2, .12, "左舷炮"], [0, -.02, "舰桥炮"], [.2, .12, "右舷炮"], [.42, -.18, "舰艉炮"], [0, .34, "甲板炮"]]
           : bossType === "tank"
@@ -1809,6 +1820,19 @@
       function updateEnemy(e, dt) {
         e.phase += dt;
         if (e.kind === "boss") {
+          if (e.ace) {
+            e.y = Math.min(250, Math.max(120, e.y + e.vy * dt));
+            const targetX = game.player.x + (W * .15 - game.player.x) * .06;
+            e.x += (targetX - e.x) * .018 * dt;
+            e.vy += Math.sin(e.phase * .035) * (.35 * dt);
+            updateBossParts(e, dt);
+            e.fire -= dt;
+            if (e.fire <= 0) {
+              bossFire(e, e.hp / e.maxHp);
+              e.fire = 36 + Math.random() * 14;
+            }
+            return;
+          }
           const targetY = e.bossType === "tank" ? 330 : e.bossType === "carrier" ? 245 : 205;
           const sway = e.bossType === "tank" ? W * .13 : e.bossType === "carrier" ? W * .11 : W * .16;
           e.y = Math.min(targetY, e.y + e.vy * dt);
@@ -1959,6 +1983,23 @@
         if (hpRatio < .35 && strength > .55) {
           for (let i = 0; i < 3; i++) addEnemyBullet(e.x - 54 + i * 54, e.y + 92, Math.PI / 2 + Math.sin(game.t * .04 + i) * .16, 4.5, 10, "#f4f7f7");
         }
+
+        if (e.ace) {
+          const p = game.player;
+          const base = Math.atan2(p.y - e.y, p.x - e.x);
+          const lvl = e.aceLevel || 1;
+          addEnemyBullet(e.x, e.y + 28, base, 4.5 + lvl * .3, 10, e.color);
+          if (lvl >= 2) {
+            addEnemyBullet(e.x - 22, e.y + 22, base - .12, 3.8, 8, "#ffd166");
+            addEnemyBullet(e.x + 22, e.y + 22, base + .12, 3.8, 8, "#ffd166");
+          }
+          if (lvl >= 3) {
+            for (let i = -1; i <= 1; i++) addEnemyBullet(e.x, e.y + 18, Math.PI / 2 + i * .16, 3.2, 7, "#c88cff");
+          }
+          if (lvl >= 4) {
+            for (let i = 0; i < 4; i++) addEnemyBullet(e.x - 16 + i * 10, e.y + 12, Math.PI / 2 + (i - 1.5) * .08, 3.0, 6, "#ff5a57");
+          }
+        }
       }
 
       function addEnemyBullet(x, y, a, speed, r, color) {
@@ -2095,6 +2136,26 @@
       }
 
       function killEnemy(e) {
+        if (e.kind === "boss" && e.ace && e.aceLives > 1) {
+          e.aceLives -= 1;
+          e.aceLevel += 1;
+          e.hp = e.maxHp * .65 + e.aceLevel * 400;
+          e.maxHp = e.hp;
+          e.x = W / 2;
+          e.y = -80;
+          e.vy = 2.6;
+          e.fire = 80;
+          game.enemyBullets.length = 0;
+          game.player.inv = 180;
+          flash = 28;
+          const acePlane = e.acePlane || planeTypes[0];
+          bossIntroTitle.textContent = `王牌复活 x${e.aceLives} — ${acePlane.name} Lv.${e.aceLevel}`;
+          bossIntroBody.textContent = "它的速度和弹幕都增强了！不要松懈！";
+          bossIntro.classList.add("show");
+          window.clearTimeout(showBossIntro.timer);
+          showBossIntro.timer = window.setTimeout(() => bossIntro.classList.remove("show"), 4000);
+          return;
+        }
         game.score += e.score;
         sfx(e.kind === "boss" ? "bigboom" : "boom");
         explode(e.x, e.y, e.kind === "boss" ? "#ff5a57" : "#ffd166", e.kind === "boss" ? 32 : 10, e.kind === "boss" ? 1.8 : .8);
@@ -2409,6 +2470,23 @@
             ctx.ellipse(0, 0, t.w * .5, t.h * .22, 0, 0, Math.PI * 2);
             ctx.stroke();
           }
+          if (t.type === "farm") {
+            ctx.fillStyle = "rgba(44,72,32,.72)";
+            roundRect(-t.w * .45, -t.h * .38, t.w * .9, t.h * .76, 4);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(155,175,120,.25)";
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 4; i++) {
+              ctx.beginPath();
+              ctx.moveTo(-t.w * .38 + i * t.w * .28, -t.h * .3);
+              ctx.lineTo(-t.w * .38 + i * t.w * .28, t.h * .3);
+              ctx.stroke();
+            }
+            ctx.fillStyle = "rgba(210,195,120,.35)";
+            ctx.beginPath();
+            ctx.ellipse(0, t.h * .18, t.w * .3, t.h * .12, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
           ctx.restore();
         }
       }
@@ -2543,6 +2621,21 @@
       }
 
       function drawBoss(e) {
+        if (e.ace) {
+          const ap = e.acePlane || planeTypes[0];
+          drawAircraft(e.x, e.y, e.r + e.aceLevel * 4, ap.color, ap.wing, -Math.PI / 2, true, false);
+          ctx.save();
+          ctx.strokeStyle = "#ffd166";
+          ctx.globalAlpha = .6 + Math.sin(game.t * .08) * .2;
+          ctx.setLineDash([4, 8]);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r + 10 + e.aceLevel * 2, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          drawHealthArc(e);
+          return;
+        }
         if (e.bossType === "tank") {
           drawTankBoss(e);
           drawBossParts(e);
@@ -2559,6 +2652,7 @@
 
       function drawBossParts(boss) {
         if (!boss.parts) return;
+        if (boss.ace) return;
         for (const part of boss.parts) {
           if (part.destroyed || part.hp <= 0) continue;
           const pos = bossPartPosition(boss, part);
