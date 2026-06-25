@@ -14,6 +14,10 @@
 
 ## 运行方式
 
+直接点击开始游戏：
+
+[在线试玩](https://htmlpreview.github.io/?https://github.com/admin05/1944/blob/main/index.html)
+
 直接在浏览器中打开：
 
 ```text
@@ -77,6 +81,10 @@ A single-file vertical arcade shooter built with HTML Canvas. Choose a fighter, 
 - Retro arcade presentation: Canvas rendering, bullet patterns, pickups, explosions, screen shake, sound effects, and boss intro sequences.
 
 ## How to Run
+
+Click to start playing:
+
+[Play online](https://htmlpreview.github.io/?https://github.com/admin05/1944/blob/main/index.html)
 
 Open this file in a browser:
 
