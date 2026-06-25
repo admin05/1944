@@ -390,10 +390,157 @@
       margin-bottom: 6px;
     }
 
-    .boss-intro-body {
+      .boss-intro-body {
       color: var(--ink);
       font-size: 12px;
       line-height: 1.45;
+    }
+
+    .boss-paper {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(3, 8, 10, .82);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px) scale(.98);
+      transition: opacity .22s ease, transform .22s ease;
+      z-index: 6;
+    }
+
+    .boss-paper.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: none;
+    }
+
+    .boss-paper-sheet {
+      width: min(92vw, 430px);
+      border: 4px solid #c9aa5b;
+      background:
+        linear-gradient(180deg, rgba(245, 229, 201, .98), rgba(228, 208, 172, .96)),
+        repeating-linear-gradient(0deg, rgba(30, 22, 18, .06) 0 2px, transparent 2px 18px);
+      color: #221815;
+      box-shadow: 0 24px 60px rgba(0,0,0,.6);
+      padding: 16px 14px 14px;
+      text-align: left;
+      transform: rotate(-1.5deg);
+    }
+
+    .boss-paper-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 3px solid #b18a3f;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .boss-paper-title {
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: .06em;
+    }
+
+    .boss-paper-sub {
+      font-size: 10px;
+      font-weight: 800;
+      margin-top: 6px;
+      opacity: .78;
+    }
+
+    .boss-paper-stamp {
+      border: 3px solid #b11d1d;
+      color: #b11d1d;
+      padding: 6px 8px;
+      font-size: 18px;
+      font-weight: 900;
+      transform: rotate(12deg);
+      align-self: center;
+      white-space: nowrap;
+    }
+
+    .boss-paper-name {
+      font-size: 22px;
+      font-weight: 900;
+      margin: 8px 0 4px;
+      line-height: 1.1;
+    }
+
+    .boss-paper-loc,
+    .boss-paper-body {
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 0 0 8px;
+    }
+
+    .boss-paper-body {
+      margin-bottom: 0;
+    }
+
+    .victory-panel {
+      width: min(92vw, 420px);
+      border: 1px solid rgba(255, 209, 102, .52);
+      background: linear-gradient(180deg, rgba(16, 24, 26, .96), rgba(7, 11, 13, .98));
+      padding: 18px 16px 16px;
+      box-shadow: 0 20px 42px rgba(0,0,0,.56), inset 0 0 18px rgba(255,209,102,.08);
+      text-align: center;
+      color: var(--ink);
+    }
+
+    .victory-title {
+      color: var(--gold);
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1;
+      margin: 0 0 8px;
+    }
+
+    .victory-score {
+      font-size: 32px;
+      font-weight: 900;
+      color: #fff;
+      margin: 10px 0 8px;
+      letter-spacing: .06em;
+    }
+
+    .victory-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+      text-align: left;
+    }
+
+    .victory-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.12);
+      padding: 10px;
+      min-height: 62px;
+    }
+
+    .victory-label {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+
+    .victory-value {
+      display: block;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .victory-note {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+      margin: 10px 0 0;
     }
 
     .training-card {
@@ -703,6 +850,7 @@
           <button class="main-btn" id="startBtn">开始出击</button>
           <p class="note">出击前完成操控登记，这是飞行员上机前的最后一道训练流程。</p>
         </div>
+        <div class="victory-panel hidden" id="victoryPanel"></div>
       </div>
       <div class="touch-controls" id="touchControls">
         <button class="touch-btn" id="touchFire">主炮</button>
@@ -713,6 +861,20 @@
       <div class="boss-intro" id="bossIntro">
         <div class="boss-intro-title" id="bossIntroTitle"></div>
         <div class="boss-intro-body" id="bossIntroBody"></div>
+      </div>
+      <div class="boss-paper" id="bossPaper">
+        <div class="boss-paper-sheet">
+          <div class="boss-paper-head">
+            <div>
+              <div class="boss-paper-title">战地快报</div>
+              <div class="boss-paper-sub" id="bossPaperSub">天穹前线特别号外</div>
+            </div>
+            <div class="boss-paper-stamp">紧急</div>
+          </div>
+          <div class="boss-paper-name" id="bossPaperName"></div>
+          <p class="boss-paper-loc" id="bossPaperLoc"></p>
+          <p class="boss-paper-body" id="bossPaperBody"></p>
+        </div>
       </div>
     </section>
 
@@ -747,6 +909,7 @@
       const lifeEl = document.querySelector("#life");
       const stripEl = document.querySelector("#weaponStrip");
       const overlay = document.querySelector("#overlay");
+      const menu = overlay.querySelector(".menu");
       const planeSelect = document.querySelector("#planeSelect");
       const modeSelect = document.querySelector("#modeSelect");
       const difficultySelect = document.querySelector("#difficultySelect");
@@ -762,6 +925,12 @@
       const bossIntro = document.querySelector("#bossIntro");
       const bossIntroTitle = document.querySelector("#bossIntroTitle");
       const bossIntroBody = document.querySelector("#bossIntroBody");
+      const bossPaper = document.querySelector("#bossPaper");
+      const bossPaperSub = document.querySelector("#bossPaperSub");
+      const bossPaperName = document.querySelector("#bossPaperName");
+      const bossPaperLoc = document.querySelector("#bossPaperLoc");
+      const bossPaperBody = document.querySelector("#bossPaperBody");
+      const victoryPanel = document.querySelector("#victoryPanel");
 
       const planeTypes = [
         { id: "falcon", name: "隼式", skillName: "穿甲长矛", skillDesc: "发射一束高伤害贯穿光矛，适合拆 Boss 装甲炮台。", color: "#6bd6ff", wing: "#dcefff", hp: 3, speed: 7.8, shot: 8.2, spread: 1, bomb: "napalm" },
@@ -927,6 +1096,9 @@
           spawnTimer: 0,
           bossTimer: 0,
           bossSpawned: false,
+          bossDefeated: 0,
+          lastBossName: "",
+          lastBossStage: "",
           trainingResets: 0,
           supplyDrop: false,
           restTimer: selectedGameMode.id === "training" ? 90 : 160,
@@ -1165,10 +1337,13 @@
           return;
         }
         ensureAudio();
+        menu.classList.remove("hidden");
+        victoryPanel.classList.add("hidden");
         overlay.querySelector("h1").textContent = "天穹前线 1944";
         overlay.querySelector(".subtitle").textContent = selectedGameMode.id === "training" ? "新兵训练空域" : "竖版街机空战";
         startBtn.textContent = selectedGameMode.id === "training" ? "开始训练" : "开始出击";
         bossIntro.classList.remove("show");
+        bossPaper.classList.remove("show");
         hudCache = {};
         game = newGame();
         state = "play";
@@ -1718,6 +1893,47 @@
         bossIntro.classList.add("show");
         window.clearTimeout(showBossIntro.timer);
         showBossIntro.timer = window.setTimeout(() => bossIntro.classList.remove("show"), 5200);
+        showBossPaper(type);
+      }
+
+      function showBossPaper(type) {
+        const theme = currentMapTheme();
+        bossPaperSub.textContent = `第 ${game.stage} 战区 · ${theme.name} 战时报`;
+        bossPaperName.textContent = type.name;
+        bossPaperLoc.textContent = `地点：${theme.name} ｜ 敌方代号：${type.id === "ace" ? "王牌飞行员" : type.id === "carrier" ? "航空母舰" : type.id === "tank" ? "重装坦克" : "飞行堡垒"}`;
+        bossPaperBody.textContent = `前线电报称，${type.name} 已进入战区。${type.intro}`;
+        bossPaper.classList.add("show");
+        window.clearTimeout(showBossPaper.timer);
+        showBossPaper.timer = window.setTimeout(() => bossPaper.classList.remove("show"), 3600);
+      }
+
+      function showVictory() {
+        state = "victory";
+        touchControls.classList.remove("show");
+        bossIntro.classList.remove("show");
+        bossPaper.classList.remove("show");
+        overlay.classList.remove("hidden");
+        menu.classList.add("hidden");
+        victoryPanel.classList.remove("hidden");
+        const rank = game.score >= 52000 ? "S" : game.score >= 36000 ? "A" : game.score >= 22000 ? "B" : "C";
+        victoryPanel.innerHTML = `
+          <div class="victory-title">任务完成</div>
+          <div class="subtitle">天穹前线战役胜利</div>
+          <div class="victory-score">${String(game.score).padStart(6, "0")}</div>
+          <div class="victory-grid">
+            <div class="victory-card"><span class="victory-label">最终评价</span><span class="victory-value">${rank} 级</span></div>
+            <div class="victory-card"><span class="victory-label">击破首领</span><span class="victory-value">${game.bossDefeated}</span></div>
+            <div class="victory-card"><span class="victory-label">最终座机</span><span class="victory-value">${game.player.plane.name}</span></div>
+            <div class="victory-card"><span class="victory-label">最后战果</span><span class="victory-value">${game.lastBossName || "全部目标"}</span></div>
+          </div>
+          <button class="main-btn" id="victoryRestart">再次出击</button>
+          <p class="victory-note">战报已归档。继续训练技能，挑战更高评价。</p>
+        `;
+        victoryPanel.querySelector("#victoryRestart").addEventListener("click", () => {
+          menu.classList.remove("hidden");
+          victoryPanel.classList.add("hidden");
+          start();
+        });
       }
 
       function bossSupportCap() {
@@ -2249,6 +2465,16 @@
         const dropChance = e.kind === "boss" ? (game.stage <= 2 ? .75 : .35) : Math.max(.06, (.22 - game.stage * .025) * selectedDifficulty.drop);
         if (Math.random() < dropChance) dropPower(e.x, e.y, e.kind === "boss");
         if (e.kind === "boss") {
+          game.bossDefeated += 1;
+          game.lastBossName = e.bossName || e.name || "敌方首领";
+          game.lastBossStage = currentMapTheme().name;
+          if (game.mode !== "training" && game.stage >= mapThemes.length) {
+            game.enemyBullets.length = 0;
+            game.enemies.length = 0;
+            game.turrets.length = 0;
+            showVictory();
+            return;
+          }
           game.stage += 1;
           game.stageTime = 0;
           game.bossTimer = 0;
@@ -2304,6 +2530,9 @@
           }
           state = "over";
           overlay.classList.remove("hidden");
+          menu.classList.remove("hidden");
+          victoryPanel.classList.add("hidden");
+          bossPaper.classList.remove("show");
           touchControls.classList.remove("show");
           overlay.querySelector("h1").textContent = "任务失败";
           overlay.querySelector(".subtitle").textContent = `得分 ${String(game.score).padStart(6, "0")}`;
@@ -2373,7 +2602,7 @@
         game?.entryMarkers.forEach(drawEntryMarker);
         game?.bossWarnings.forEach(drawBossWarning);
         if (state !== "play") {
-          drawTrainingDemo();
+          if (state === "menu") drawTrainingDemo();
           drawVignette();
           ctx.restore();
           return;
