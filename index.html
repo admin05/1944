@@ -524,6 +524,37 @@
         font-size: 28px;
       }
     }
+
+    @media (max-width: 860px) and (orientation: portrait) {
+      .shell {
+        place-items: stretch;
+      }
+
+      .cabinet {
+        width: 100vw;
+        height: 100dvh;
+        aspect-ratio: auto;
+      }
+
+      .cabinet canvas {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: auto;
+        height: 100%;
+        transform: translate(-50%, -50%);
+      }
+
+      .menu {
+        width: min(94vw, 420px);
+      }
+
+      .boss-intro {
+        left: 10px;
+        right: 10px;
+        top: 96px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1492,12 +1523,22 @@
       }
 
       function spawnBoss() {
-        const types = [
-          { id: "fortress", name: "钢翼堡垒·赫尔曼", hp: 3800, r: 460, y: -520, vy: 1.15, color: "#8d3939", score: 8000, intro: "四发重型轰炸机改装的空中要塞，机腹炮塔会扫射整片空域。优先处理伴飞小队，等待它横移露出核心。" },
-          { id: "tank", name: "陆行巨炮·巴巴罗萨", hp: 3300, r: 420, y: -460, vy: 1.35, color: "#667052", score: 7000, intro: "超重型坦克被运上海岸高台，双联主炮会直接锁定你的航线。它压迫感强，但转向慢，利用两侧空隙反击。" },
-          { id: "carrier", name: "灰海航母·利维坦", hp: 4700, r: 500, y: -620, vy: .95, color: "#526a73", score: 9000, intro: "装甲航母进入战区，甲板炮和舰载机弹幕会同时封锁中路。不要贪火力，先清支援机再攻击舰桥。" }
-        ];
-        const type = types[(game.stage - 1) % types.length];
+        const stage = ((game.stage - 1) % mapThemes.length) + 1;
+        const type = (() => {
+          if (stage === 1) {
+            return { id: "fortress", name: "B-17飞行堡垒", hp: 5400, r: 450, y: -500, vy: 1.08, color: "#8d3939", score: 7800, intro: "阿登森林上空的老牌重型轰炸机改装要塞，侧翼炮塔和腹部炮台会交替压制航线。先清空周边小队，再拆它的装甲机身。" };
+          }
+          if (stage === 2) {
+            return { id: "carrier", name: "福特号航空母舰", hp: 7200, r: 505, y: -620, vy: .92, color: "#526a73", score: 9400, intro: "珍珠港海域的巨型航母，甲板炮、舰载机和舰桥火力会一起封锁中路。先压制甲板支援，再打舰桥核心。" };
+          }
+          if (stage === 3) {
+            return { id: "fortress", name: "B-29飞行堡垒", hp: 6100, r: 470, y: -530, vy: 1.12, color: "#93616a", score: 8600, intro: "柏林上空的远程重轰炸机要塞，火力比前一架更密，机腹炮台也更难躲。要抓它横移后的短暂空档反击。" };
+          }
+          if (stage === 4) {
+            return { id: "tank", name: "虎式", hp: 5600, r: 430, y: -470, vy: 1.28, color: "#667052", score: 7400, intro: "莫斯科前线的重装突击坦克，正面装甲厚，双联主炮会持续逼退你。绕开正面炮口，从两侧切入。" };
+          }
+          return { id: "tank", name: "豹式", hp: 5900, r: 440, y: -470, vy: 1.22, color: "#6d785d", score: 7800, intro: "斯大林格勒战线的机动型坦克，转向更快，炮台压制也更凶。别停在正前方，边躲边拆它的装甲模块。" };
+        })();
         game.bossSpawned = true;
         game.supplyDrop = false;
         game.restTimer = 80;
@@ -1512,8 +1553,8 @@
           vx: 0,
           vy: type.vy,
           r: type.r,
-          hp: (type.hp + game.stage * 520 + Math.max(0, game.stage - 2) * 360) * selectedDifficulty.hp,
-          maxHp: (type.hp + game.stage * 520 + Math.max(0, game.stage - 2) * 360) * selectedDifficulty.hp,
+          hp: (type.hp + game.stage * 760 + Math.max(0, game.stage - 2) * 520) * selectedDifficulty.hp,
+          maxHp: (type.hp + game.stage * 760 + Math.max(0, game.stage - 2) * 520) * selectedDifficulty.hp,
           fire: 60,
           score: type.score,
           color: type.color,
@@ -1548,8 +1589,8 @@
           ox,
           oy,
           r: bossType === "carrier" ? 34 : bossType === "tank" ? 32 : 30,
-          hp: (bossType === "carrier" ? 180 : bossType === "tank" ? 155 : 140) * selectedDifficulty.hp,
-          maxHp: (bossType === "carrier" ? 180 : bossType === "tank" ? 155 : 140) * selectedDifficulty.hp,
+          hp: (bossType === "carrier" ? 260 : bossType === "tank" ? 230 : 210) * selectedDifficulty.hp,
+          maxHp: (bossType === "carrier" ? 260 : bossType === "tank" ? 230 : 210) * selectedDifficulty.hp,
           fire: 24 + i * 11,
           phase: i * 1.7,
           destroyed: false
