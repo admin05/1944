@@ -1629,9 +1629,8 @@
           if (stage === 5) {
             return { id: "tank", name: "豹式", hp: 5900, r: 440, y: -470, vy: 1.22, color: "#6d785d", score: 7800, intro: "斯大林格勒战线的机动型坦克，转向更快，炮台压制也更凶。别停在正前方，边躲边拆它的装甲模块。" };
           }
-          const aceIdx = Math.abs(Math.floor(game.t / game.t || 1)) % 6;
-          const acePlane = planeTypes[aceIdx];
-          return { id: "ace", name: `王牌·${acePlane.name}`, hp: 2800, r: 36, y: -80, vy: 2.6, color: acePlane.color, score: 12000, intro: `大不列颠上空，敌方王牌飞行员驾驶\"${acePlane.name}\"拦截。他能使用失传的\"${acePlane.skillName}\"，而且有4条命——每次击落他都会升级。` };
+          const acePick = planeTypes[Math.floor(Math.random() * planeTypes.length)];
+          return { id: "ace", name: `王牌·${acePick.name}`, hp: 2800, r: 36, y: -80, vy: 2.6, color: acePick.color, score: 12000, intro: `大不列颠上空，敌方王牌飞行员驾驶\"${acePick.name}\"拦截。他能使用\"${acePick.skillName}\"和全套技能系统——有4条命，每次复活都会升级。` };
         })();
         game.bossSpawned = true;
         game.supplyDrop = false;
@@ -1653,9 +1652,17 @@
           score: type.score,
           color: type.color,
           ace: type.id === "ace",
-          acePlane: type.id === "ace" ? planeTypes[Math.abs(Math.floor((game.stage - 6) / game.stage * 10)) % 6] : null,
+          acePlane: type.id === "ace" ? planeTypes[Math.floor(Math.random() * planeTypes.length)] : null,
           aceLives: type.id === "ace" ? 4 : 0,
           aceLevel: type.id === "ace" ? 1 : 0,
+          aceMainLevel: type.id === "ace" ? 1 : 0,
+          aceSecondaryLevel: type.id === "ace" ? 1 : 0,
+          aceSkillLevel: type.id === "ace" ? 1 : 0,
+          aceCooldownLevel: type.id === "ace" ? 1 : 0,
+          skillReady: false,
+          aceFireTimer: 0,
+          aceSecondaryTimer: 0,
+          aceSkillTimer: 0,
           phase: 0,
           parts: makeBossParts(type.id, type.r)
         });
@@ -1821,11 +1828,58 @@
         e.phase += dt;
         if (e.kind === "boss") {
           if (e.ace) {
+            const ap = e.acePlane || planeTypes[0];
             e.y = Math.min(250, Math.max(120, e.y + e.vy * dt));
             const targetX = game.player.x + (W * .15 - game.player.x) * .06;
             e.x += (targetX - e.x) * .018 * dt;
             e.vy += Math.sin(e.phase * .035) * (.35 * dt);
             updateBossParts(e, dt);
+            const p = game.player;
+            // ace main fire timer
+            e.aceFireTimer -= dt;
+            if (e.aceFireTimer <= 0) {
+              e.aceFireTimer = Math.max(6, 24 - e.aceMainLevel * 2.5 - e.aceLevel * 1.5);
+              const p = game.player;
+              const count = 1 + Math.floor((e.aceMainLevel - 1) / 2);
+              for (let i = 0; i < count; i++) {
+                const off = i - (count - 1) / 2;
+                addEnemyBullet(e.x + off * 10, e.y + 28, Math.atan2(p.y - e.y, p.x - e.x + off * 6), 5 + e.aceMainLevel * .3, 9, ap.color);
+              }
+            }
+            // ace secondary fire timer
+            e.aceSecondaryTimer -= dt;
+            if (e.aceSecondaryTimer <= 0) {
+              e.aceSecondaryTimer = Math.max(30, 70 - e.aceSecondaryLevel * 8);
+              const a = Math.atan2(p.y - e.y, p.x - e.x);
+              addEnemyBullet(e.x - 28, e.y + 14, a - .08, 5.5, 12, "#ffd166");
+              addEnemyBullet(e.x + 28, e.y + 14, a + .08, 5.5, 12, "#ffd166");
+            }
+            // ace skill timer
+            e.aceSkillTimer -= dt;
+            if (e.skillReady && e.aceSkillTimer <= 0) {
+              e.skillReady = false;
+              e.aceSkillTimer = Math.max(160, 380 - e.aceSkillLevel * 30 - e.aceCooldownLevel * 30);
+              if (ap.id === "falcon") {
+                addEnemyBullet(e.x, e.y - 20, -Math.PI / 2, 12 + e.aceSkillLevel, 20, "#6bd6ff");
+              } else if (ap.id === "raiden") {
+                const arc = 5 + e.aceSkillLevel;
+                for (let i = -arc; i <= arc; i++) addEnemyBullet(e.x, e.y + 6, Math.PI / 2 + i * .12, 5 + Math.abs(i) * .1, 8, "#ff5a57");
+              } else if (ap.id === "atlas") {
+                for (let i = -3; i <= 3; i++) addEnemyBullet(e.x + i * 20, e.y - 10, Math.PI / 2 + i * .05, 8, 16 + e.aceSkillLevel * 2, "#ffd166");
+              } else if (ap.id === "comet") {
+                const dx = W * .28;
+                for (let i = 0; i < 5; i++) addEnemyBullet(e.x - dx + i * dx * .5, e.y - 12, Math.PI / 2, 6, 14, "#49db9a");
+              } else if (ap.id === "vulcan") {
+                for (let i = 0; i < 16 + e.aceSkillLevel * 4; i++) {
+                  const a2 = Math.PI * 2 * i / (16 + e.aceSkillLevel * 4);
+                  addEnemyBullet(e.x, e.y + 4, a2, 4.5, 7, "#c88cff");
+                }
+              } else if (ap.id === "mustang") {
+                const a2 = Math.atan2(p.y - e.y, p.x - e.x);
+                for (let i = -2; i <= 2; i++) addEnemyBullet(e.x + i * 16, e.y + 6, a2 + i * .08, 4.8, 10, "#f4f7f7");
+              }
+            }
+            if (e.aceSkillTimer < 60) { e.skillReady = true; }
             e.fire -= dt;
             if (e.fire <= 0) {
               bossFire(e, e.hp / e.maxHp);
@@ -2139,18 +2193,25 @@
         if (e.kind === "boss" && e.ace && e.aceLives > 1) {
           e.aceLives -= 1;
           e.aceLevel += 1;
+          e.aceMainLevel = Math.min(5, e.aceMainLevel + 1);
+          e.aceSecondaryLevel = Math.min(5, e.aceSecondaryLevel + 1);
+          e.aceSkillLevel = Math.min(5, e.aceSkillLevel + 1);
+          e.aceCooldownLevel = Math.min(4, e.aceCooldownLevel + 1);
+          e.acePlane = planeTypes[Math.floor(Math.random() * planeTypes.length)];
           e.hp = e.maxHp * .65 + e.aceLevel * 400;
           e.maxHp = e.hp;
           e.x = W / 2;
           e.y = -80;
           e.vy = 2.6;
           e.fire = 80;
+          e.skillReady = false;
           game.enemyBullets.length = 0;
           game.player.inv = 180;
           flash = 28;
-          const acePlane = e.acePlane || planeTypes[0];
-          bossIntroTitle.textContent = `王牌复活 x${e.aceLives} — ${acePlane.name} Lv.${e.aceLevel}`;
-          bossIntroBody.textContent = "它的速度和弹幕都增强了！不要松懈！";
+          e.bossName = `王牌·${e.acePlane.name}`;
+          const lv = `${e.aceMainLevel}-${e.aceSecondaryLevel}-${e.aceSkillLevel}`;
+          bossIntroTitle.textContent = `王牌复活 x${e.aceLives} — ${e.acePlane.name} Lv.${e.aceLevel}`;
+          bossIntroBody.textContent = `技能升级：主炮${e.aceMainLevel} 副武${e.aceSecondaryLevel} 技能${e.aceSkillLevel}。不要松懈！`;
           bossIntro.classList.add("show");
           window.clearTimeout(showBossIntro.timer);
           showBossIntro.timer = window.setTimeout(() => bossIntro.classList.remove("show"), 4000);
