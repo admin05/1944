@@ -482,58 +482,146 @@
     }
 
     .victory-panel {
-      width: min(92vw, 420px);
-      border: 1px solid rgba(255, 209, 102, .52);
-      background: linear-gradient(180deg, rgba(16, 24, 26, .96), rgba(7, 11, 13, .98));
-      padding: 18px 16px 16px;
-      box-shadow: 0 20px 42px rgba(0,0,0,.56), inset 0 0 18px rgba(255,209,102,.08);
+      width: min(94vw, 540px);
+      border: 2px solid rgba(255, 209, 102, .72);
+      background:
+        linear-gradient(180deg, rgba(34, 42, 39, .98), rgba(8, 12, 13, .98)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 1px, transparent 1px 18px);
+      padding: 0;
+      box-shadow: 0 24px 58px rgba(0,0,0,.64), inset 0 0 28px rgba(255,209,102,.1);
       text-align: center;
       color: var(--ink);
+      overflow: hidden;
+    }
+
+    .victory-top {
+      position: relative;
+      padding: 16px 16px 12px;
+      background:
+        linear-gradient(90deg, rgba(177,29,29,.8), rgba(255,209,102,.3), rgba(20,35,42,.28)),
+        linear-gradient(180deg, rgba(255,255,255,.08), transparent);
+      border-bottom: 2px solid rgba(255,209,102,.42);
+    }
+
+    .victory-ribbon {
+      color: #221815;
+      background: linear-gradient(180deg, #fff1b3, #d8a73d);
+      border: 2px solid rgba(255,255,255,.38);
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 900;
+      box-shadow: 0 4px 0 rgba(50,35,12,.65);
+      margin-bottom: 10px;
     }
 
     .victory-title {
-      color: var(--gold);
-      font-size: 28px;
+      color: #fff4b8;
+      font-size: 31px;
       font-weight: 900;
       line-height: 1;
       margin: 0 0 8px;
+      text-shadow: 0 3px 0 #000, 0 0 18px rgba(255,209,102,.34);
+    }
+
+    .victory-subtitle {
+      color: rgba(238,248,255,.86);
+      font-size: 12px;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .victory-body {
+      padding: 14px 16px 16px;
+    }
+
+    .victory-score-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      margin-bottom: 12px;
     }
 
     .victory-score {
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 900;
       color: #fff;
-      margin: 10px 0 8px;
+      line-height: 1;
       letter-spacing: .06em;
+      text-shadow: 0 3px 0 #000;
+    }
+
+    .victory-rank {
+      width: 82px;
+      height: 82px;
+      display: grid;
+      place-items: center;
+      border: 3px solid #fff1b3;
+      background: radial-gradient(circle at 50% 34%, #fff6ca, #d8a73d 48%, #8b4c21);
+      color: #221815;
+      font-size: 36px;
+      font-weight: 900;
+      box-shadow: inset 0 0 12px rgba(255,255,255,.5), 0 10px 20px rgba(0,0,0,.38);
+    }
+
+    .victory-meter {
+      height: 8px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.16);
+      margin: 8px 0 12px;
+      overflow: hidden;
+    }
+
+    .victory-meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff5a57, #ffd166, #49db9a);
+      box-shadow: 0 0 12px rgba(255,209,102,.5);
     }
 
     .victory-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin: 12px 0;
       text-align: left;
     }
 
     .victory-card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(255,255,255,.14);
       padding: 10px;
-      min-height: 62px;
+      min-height: 66px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
 
     .victory-label {
       display: block;
       color: var(--muted);
       font-size: 10px;
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
 
     .victory-value {
       display: block;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 900;
-      line-height: 1.1;
+      line-height: 1.18;
+      color: #fff;
+      overflow-wrap: anywhere;
+    }
+
+    .victory-brief {
+      margin: 10px 0 12px;
+      padding: 10px;
+      text-align: left;
+      border-top: 1px solid rgba(255,209,102,.32);
+      border-bottom: 1px solid rgba(255,209,102,.22);
+      background: rgba(255,209,102,.07);
+      color: rgba(238,248,255,.9);
+      font-size: 12px;
+      line-height: 1.5;
     }
 
     .victory-note {
@@ -2047,18 +2135,34 @@
         menu.classList.add("hidden");
         victoryPanel.classList.remove("hidden");
         const rank = game.score >= 52000 ? "S" : game.score >= 36000 ? "A" : game.score >= 22000 ? "B" : "C";
+        const rankScore = rank === "S" ? 100 : rank === "A" ? 78 : rank === "B" ? 56 : 34;
+        const p = game.player;
+        const weaponReport = `火力 ${p.power}｜主炮 Lv.${p.mainLevel}｜副武 Lv.${p.secondaryLevel}｜技能 Lv.${p.skillLevel}`;
         victoryPanel.innerHTML = `
-          <div class="victory-title">任务完成</div>
-          <div class="subtitle">天穹前线战役胜利</div>
-          <div class="victory-score">${String(game.score).padStart(6, "0")}</div>
-          <div class="victory-grid">
-            <div class="victory-card"><span class="victory-label">最终评价</span><span class="victory-value">${rank} 级</span></div>
-            <div class="victory-card"><span class="victory-label">击破首领</span><span class="victory-value">${game.bossDefeated}</span></div>
-            <div class="victory-card"><span class="victory-label">最终座机</span><span class="victory-value">${game.player.plane.name}</span></div>
-            <div class="victory-card"><span class="victory-label">最后战果</span><span class="victory-value">${game.lastBossName || "全部目标"}</span></div>
+          <div class="victory-top">
+            <div class="victory-ribbon">天穹前线 · 最终战报</div>
+            <div class="victory-title">任务完成</div>
+            <p class="victory-subtitle">全战区首领目标已确认摧毁，飞行中队返航。</p>
           </div>
-          <button class="main-btn" id="victoryRestart">再次出击</button>
-          <p class="victory-note">战报已归档。继续训练技能，挑战更高评价。</p>
+          <div class="victory-body">
+            <div class="victory-score-row">
+              <div>
+                <span class="victory-label">总分</span>
+                <div class="victory-score">${String(game.score).padStart(6, "0")}</div>
+              </div>
+              <div class="victory-rank">${rank}</div>
+            </div>
+            <div class="victory-meter"><div class="victory-meter-fill" style="width:${rankScore}%"></div></div>
+            <div class="victory-grid">
+              <div class="victory-card"><span class="victory-label">击破首领</span><span class="victory-value">${game.bossDefeated} 个</span></div>
+              <div class="victory-card"><span class="victory-label">最终战区</span><span class="victory-value">${game.lastBossStage || currentMapTheme().name}</span></div>
+              <div class="victory-card"><span class="victory-label">最后目标</span><span class="victory-value">${game.lastBossName || "全部目标"}</span></div>
+              <div class="victory-card"><span class="victory-label">最终座机</span><span class="victory-value">${p.plane.name}</span></div>
+            </div>
+            <div class="victory-brief">战术记录：${weaponReport}。剩余生命 ${p.hp}/${p.maxHp}，炸弹 ${p.bombs}，护盾 ${Math.floor(p.shield)}。</div>
+            <button class="main-btn" id="victoryRestart">再次出击</button>
+            <p class="victory-note">战报已归档。提高评分需要更快击破首领、减少受伤并保留更多装备。</p>
+          </div>
         `;
         victoryPanel.querySelector("#victoryRestart").addEventListener("click", () => {
           menu.classList.remove("hidden");
