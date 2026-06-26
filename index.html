@@ -1823,7 +1823,7 @@
           game.spawnTimer = 18;
         }
 
-        if (!game.bossSpawned && game.bossTimer > BOSS_SPAWN_TIME) {
+        if (!game.bossSpawned && game.bossTimer > BOSS_SPAWN_TIME && livingMinionCount() === 0) {
           spawnBoss();
         }
       }
@@ -1833,11 +1833,6 @@
         game.restTimer = 130;
         game.spawnTimer = 150;
         game.enemyBullets.length = 0;
-        game.enemies = game.enemies.filter(e => {
-          if (e.kind === "boss") return true;
-          explode(e.x, e.y, "#ffd166", 6, .6);
-          return false;
-        });
         const pool = ["power", "shield", "wingman", "missile", "laser", "bomb"];
         for (let i = 0; i < 3; i++) {
           const type = pool[Math.floor(Math.random() * pool.length)];
@@ -1873,6 +1868,10 @@
             phase: Math.random() * 10
           });
         }
+      }
+
+      function livingMinionCount() {
+        return game.enemies.filter(e => e.kind !== "boss" && e.hp > 0).length;
       }
 
       function spawnDivePair(danger) {
