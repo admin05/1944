@@ -949,7 +949,8 @@
         spread: { label: "散弹", color: "#ff8d5c" },
         missile: { label: "导弹", color: "#f4f7f7" },
         heal: { label: "维修", color: "#ff5a57" },
-        bomb: { label: "炸弹", color: "#b7ff5a" }
+        bomb: { label: "炸弹", color: "#b7ff5a" },
+        bomber: { label: "轰炸", color: "#ffec9c" }
       };
       const BASE_ACTIVE_MINIONS = 6;
       const FIRST_BOSS_SUPPORT_MINIONS = 2;
@@ -1116,6 +1117,8 @@
             fire: 0,
             secondaryFire: 0,
             skillCooldown: 0,
+            bomberMode: 0,
+            bomberFire: 0,
             mainLevel: 1,
             secondaryLevel: 1,
             skillLevel: 1,
@@ -1453,10 +1456,34 @@
         p.fire -= dt;
         p.secondaryFire -= dt;
         p.skillCooldown -= dt;
+        p.bomberMode = Math.max(0, p.bomberMode - dt);
+        p.bomberFire -= dt;
         p.inv = Math.max(0, p.inv - dt);
         if (isFirePressed(gamepad) && p.fire <= 0) firePlayer();
+        if (p.bomberMode > 0) updateBomberMode(p, dt);
         if (selectedInputMode?.id === "touch" && touchSecondaryHeld) fireSecondary();
         if (game.t % 7 < dt && game.trails.length < MAX_TRAILS) game.trails.push({ x: p.x, y: p.y + 28, r: 5, life: 20, c: p.plane.color });
+      }
+
+      function updateBomberMode(p, dt) {
+        if (p.bomberFire > 0) return;
+        p.bomberFire = 28;
+        const waveY = p.y - 190;
+        [-120, -60, 0, 60, 120].forEach((dx, i) => {
+          const x = clamp(p.x + dx, 70, W - 70);
+          const y = waveY - Math.abs(dx) * .25;
+          game.bombWaves.push({ x, y, life: 42, maxLife: 42, r: 12, color: i % 2 ? "#ffd166" : "#f4f7f7" });
+          game.missiles.push({ x, y: p.y - 20, vx: dx * .012, vy: -12, r: 11, dmg: 92, life: 52, bombFx: true });
+        });
+        game.enemies.forEach(e => {
+          if (e.hp <= 0) return;
+          if (Math.abs(e.x - p.x) < 260 && e.y < p.y + 40) {
+            e.hp -= e.kind === "boss" ? 80 : 120;
+            spark(e.x, e.y, "#ffd166", 3);
+            if (e.hp <= 0) killEnemy(e);
+          }
+        });
+        if (game.enemyBullets.length > 0) game.enemyBullets.splice(0, Math.min(8, game.enemyBullets.length));
       }
 
       function isFirePressed(gamepad) {
@@ -1626,6 +1653,7 @@
           const roll = Math.random();
           if (roll < .52) spawnScoutSquad(trainingDanger);
           else if (roll < .82) spawnDivePair(trainingDanger);
+          else if (roll < .92 && playerStrength() > .3) spawnEliteWing(trainingDanger);
           else spawnHeavy(trainingDanger * .85);
           game.spawnTimer = 70 + Math.random() * 42 - playerStrength() * 14;
         } else if (game.spawnTimer <= 0) {
@@ -1666,8 +1694,9 @@
           const roll = Math.random();
           if (roll < .42) spawnScoutSquad(danger);
           else if (roll < .68) spawnDivePair(danger);
-          else if (roll < .86 && strength > .25) spawnHeavy(danger);
-          else if (strength > .45) spawnTrain(danger);
+          else if (roll < .8 && strength > .25) spawnEliteWing(danger);
+          else if (roll < .9 && strength > .25) spawnHeavy(danger);
+          else if (strength > .45) Math.random() > .45 ? spawnEliteBomber(danger) : spawnTrain(danger);
           else spawnScoutSquad(danger);
           game.spawnTimer = Math.max(72, 128 - danger * 4 - strength * 24 - Math.random() * 10);
         } else if (boss && !boss.ace && game.spawnTimer <= 0 && game.restTimer <= 0 && minions < minionCap) {
@@ -1753,6 +1782,47 @@
             phase: Math.random() * 10
           });
         }
+      }
+
+      function spawnEliteWing(danger) {
+        const current = game.enemies.filter(e => e.kind !== "boss").length;
+        if (current >= activeMinionCap()) return;
+        const kind = Math.random() > .5 ? "aceMinion" : "rocket";
+        game.entryMarkers.push({ x: W / 2, y: 56, vx: 0, life: 92, maxLife: 92, kind: "dive", count: 1 });
+        game.enemies.push({
+          kind,
+          elite: true,
+          x: 160 + Math.random() * (W - 320),
+          y: -90,
+          vx: Math.random() > .5 ? 2.1 : -2.1,
+          vy: kind === "rocket" ? 4.1 : 2.6,
+          r: kind === "rocket" ? 34 : 36,
+          hp: (kind === "rocket" ? 48 : 62) * selectedDifficulty.hp + danger * 12,
+          maxHp: (kind === "rocket" ? 48 : 62) * selectedDifficulty.hp + danger * 12,
+          fire: 38,
+          score: kind === "rocket" ? 520 : 640,
+          color: kind === "rocket" ? "#d94b4b" : "#5db8d9",
+          phase: Math.random() * 10
+        });
+      }
+
+      function spawnEliteBomber(danger) {
+        if (game.enemies.filter(e => e.kind !== "boss").length >= activeMinionCap()) return;
+        game.enemies.push({
+          kind: "bomberElite",
+          elite: true,
+          x: 180 + Math.random() * (W - 360),
+          y: -130,
+          vx: Math.random() > .5 ? .9 : -.9,
+          vy: 1.25,
+          r: 62,
+          hp: (138 + danger * 24) * selectedDifficulty.hp,
+          maxHp: (138 + danger * 24) * selectedDifficulty.hp,
+          fire: 46,
+          score: 980,
+          color: "#8c6a4b",
+          phase: Math.random() * 10
+        });
       }
 
       function spawnHeavy(danger) {
@@ -2221,6 +2291,19 @@
         if (e.kind === "scout") {
           addEnemyBullet(e.x, e.y + 20, base, 4.2, 8, "#ffb45a");
           if (strength > .65) addEnemyBullet(e.x, e.y + 20, base + .16, 3.7, 7, "#ffb45a");
+        } else if (e.kind === "aceMinion") {
+          addEnemyBullet(e.x - 18, e.y + 24, base - .08, 4.6, 9, "#58c7ff");
+          addEnemyBullet(e.x + 18, e.y + 24, base + .08, 4.6, 9, "#58c7ff");
+          if (strength > .5) addEnemyBullet(e.x, e.y + 20, Math.PI / 2, 3.4, 8, "#ffd166");
+        } else if (e.kind === "rocket") {
+          addEnemyBullet(e.x, e.y + 30, base, 5.4, 12, "#ff5a57");
+          addEnemyBullet(e.x, e.y + 12, Math.PI / 2, 4.8, 9, "#ffd166");
+        } else if (e.kind === "bomberElite") {
+          for (let i = -2; i <= 2; i++) addEnemyBullet(e.x + i * 22, e.y + 42, Math.PI / 2 + i * .08, 3.2, 10, "#ff8d5c");
+          if (strength > .45) {
+            addEnemyBullet(e.x - 44, e.y + 22, base, 4.2, 11, "#c88cff");
+            addEnemyBullet(e.x + 44, e.y + 22, base, 4.2, 11, "#c88cff");
+          }
         } else if (e.kind === "dive") {
           addEnemyBullet(e.x, e.y + 26, base, 3.8, 9, "#ff6d6a");
           if (strength > .45) {
@@ -2542,8 +2625,8 @@
 
       function dropPower(x, y, boss = false) {
         const types = boss
-          ? ["power", "wingman", "laser", "missile", "bomb", ...(Math.random() < selectedDifficulty.shieldDrop ? ["shield"] : [])]
-          : ["power", "wingman", "laser", "missile", "bomb", ...(Math.random() < selectedDifficulty.shieldDrop * .45 ? ["shield"] : [])];
+          ? ["power", "wingman", "laser", "missile", "bomb", "bomber", ...(Math.random() < selectedDifficulty.shieldDrop ? ["shield"] : [])]
+          : ["power", "wingman", "laser", "missile", "bomb", ...(Math.random() < .035 ? ["bomber"] : []), ...(Math.random() < selectedDifficulty.shieldDrop * .45 ? ["shield"] : [])];
         const count = boss ? (game.stage <= 2 ? 2 : 1) : 1;
         for (let i = 0; i < count; i++) {
           const type = types[Math.floor(Math.random() * types.length)];
@@ -2562,6 +2645,12 @@
         if (type === "missile") p.missile = Math.min(5, p.missile + 1.5);
         if (type === "heal") p.hp = Math.min(p.maxHp, p.hp + 1);
         if (type === "bomb") p.bombs = Math.min(6, p.bombs + 1);
+        if (type === "bomber") {
+          p.bomberMode = 520;
+          p.bomberFire = 0;
+          p.inv = Math.max(p.inv, 90);
+          flash = Math.max(flash, 18);
+        }
         sfx("pickup");
         spark(p.x, p.y - 12, powerDefs[type].color, 8);
       }
@@ -2997,6 +3086,7 @@
       }
 
       function drawPlayer(p) {
+        if (p.bomberMode > 0) drawBomberFormation(p);
         drawAircraft(p.x, p.y, p.r, p.plane.color, p.plane.wing, -Math.PI / 2, true, p.inv > 0 && Math.floor(game.t / 4) % 2 === 0);
         if (p.wingman > 0) {
           drawAircraft(p.x - 58, p.y + 28, 17, "#49db9a", "#d8ffe9", -Math.PI / 2, true, false);
@@ -3009,6 +3099,17 @@
           ctx.arc(p.x, p.y, 42 + Math.sin(game.t * .12) * 4, 0, Math.PI * 2);
           ctx.stroke();
         }
+      }
+
+      function drawBomberFormation(p) {
+        const a = Math.min(1, p.bomberMode / 80);
+        ctx.save();
+        ctx.globalAlpha = .35 + a * .38;
+        [-170, -85, 0, 85, 170].forEach((dx, i) => {
+          const y = p.y - 240 - Math.abs(dx) * .22 + Math.sin(game.t * .05 + i) * 8;
+          drawAircraft(clamp(p.x + dx, 60, W - 60), y, 22, "#5f6f72", "#d8e3df", -Math.PI / 2, true, false);
+        });
+        ctx.restore();
       }
 
       function drawAircraft(x, y, r, body, wing, angle, player, blink) {
@@ -3058,6 +3159,39 @@
         const angle = Math.PI / 2 + Math.sin(e.phase * .045) * .18;
         if (e.kind === "train") {
           drawTrain(e);
+          return;
+        }
+        if (e.kind === "rocket") {
+          drawAircraft(e.x, e.y, e.r, e.color, "#ffd1c4", Math.PI / 2, false, false);
+          ctx.save();
+          ctx.fillStyle = "rgba(255,209,102,.82)";
+          ctx.beginPath();
+          ctx.ellipse(e.x, e.y - e.r * .95, e.r * .18, e.r * .48, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          drawHealthArc(e);
+          return;
+        }
+        if (e.kind === "aceMinion") {
+          drawAircraft(e.x, e.y, e.r, e.color, "#d5f3ff", angle, false, false);
+          ctx.save();
+          ctx.strokeStyle = "#ffd166";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r + 8, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          drawHealthArc(e);
+          return;
+        }
+        if (e.kind === "bomberElite") {
+          drawAircraft(e.x, e.y, e.r, e.color, "#e6d0aa", Math.PI / 2, false, false);
+          ctx.save();
+          ctx.fillStyle = "rgba(0,0,0,.32)";
+          ctx.fillRect(e.x - e.r * 1.6, e.y + e.r * .36, e.r * 3.2, e.r * .22);
+          ctx.fillStyle = "#ff5a57";
+          ctx.fillRect(e.x - e.r, e.y + e.r * .52, e.r * 2 * (e.hp / e.maxHp), 5);
+          ctx.restore();
           return;
         }
         drawAircraft(e.x, e.y, e.r, e.color, "#c3c0ad", angle, false, false);
@@ -3669,6 +3803,7 @@
           ["激光", p.laser > 0],
           ["散弹", p.spread > 1],
           ["导弹", p.missile > 0],
+          [p.bomberMode > 0 ? `轰炸${Math.ceil(p.bomberMode / 60)}` : "轰炸", p.bomberMode > 0],
           [p.skillCooldown > 0 ? `技能${Math.ceil(p.skillCooldown / 60)}` : p.plane.skillName, p.skillCooldown <= 0]
         ];
         const chipText = chips.map(([name, on]) => `${name}:${on ? 1 : 0}`).join("|");
