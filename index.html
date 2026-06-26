@@ -1648,14 +1648,15 @@
 
       function updateTrainingMode(dt, danger, minions) {
         const trainingDanger = Math.min(2.15, danger);
-        const trainingCap = Math.min(activeMinionCap(), 5 + Math.floor(playerStrength() * 2));
+        const trainingCap = Math.min(activeMinionCap(), 6 + Math.floor(playerStrength() * 2));
         if (game.spawnTimer <= 0 && game.restTimer <= 0 && minions < trainingCap) {
           const roll = Math.random();
-          if (roll < .52) spawnScoutSquad(trainingDanger);
-          else if (roll < .82) spawnDivePair(trainingDanger);
-          else if (roll < .92 && playerStrength() > .3) spawnEliteWing(trainingDanger);
+          if (roll < .42) spawnScoutSquad(trainingDanger);
+          else if (roll < .68) spawnDivePair(trainingDanger);
+          else if (roll < .88 && playerStrength() > .3) spawnEliteWing(trainingDanger);
+          else if (roll < .96 && playerStrength() > .45) spawnEliteBomber(trainingDanger);
           else spawnHeavy(trainingDanger * .85);
-          game.spawnTimer = 70 + Math.random() * 42 - playerStrength() * 14;
+          game.spawnTimer = 66 + Math.random() * 36 - playerStrength() * 16;
         } else if (game.spawnTimer <= 0) {
           game.spawnTimer = 22;
         }
@@ -1690,17 +1691,23 @@
         }
 
         const minionCap = boss ? bossSupportCap() : activeMinionCap();
+        const preBossRush = preBossRushActive();
         if (game.spawnTimer <= 0 && game.restTimer <= 0 && game.bossTimer < BOSS_WARNING_TIME && minions < minionCap) {
           const roll = Math.random();
-          if (roll < .42) spawnScoutSquad(danger);
-          else if (roll < .68) spawnDivePair(danger);
-          else if (roll < .8 && strength > .25) spawnEliteWing(danger);
-          else if (roll < .9 && strength > .25) spawnHeavy(danger);
-          else if (strength > .45) Math.random() > .45 ? spawnEliteBomber(danger) : spawnTrain(danger);
+          if (roll < (preBossRush ? .32 : .42)) spawnScoutSquad(danger);
+          else if (roll < (preBossRush ? .55 : .68)) spawnDivePair(danger);
+          else if (roll < (preBossRush ? .82 : .8) && strength > .25) spawnEliteWing(danger);
+          else if (roll < (preBossRush ? .92 : .9) && strength > .25) spawnHeavy(danger);
+          else if (strength > .45) Math.random() > (preBossRush ? .28 : .45) ? spawnEliteBomber(danger) : spawnTrain(danger);
           else spawnScoutSquad(danger);
-          game.spawnTimer = Math.max(72, 128 - danger * 4 - strength * 24 - Math.random() * 10);
+          const minInterval = preBossRush ? (IS_MOBILE ? 58 : 48) : 72;
+          game.spawnTimer = Math.max(minInterval, 128 - danger * 5 - strength * 26 - (preBossRush ? 18 : 0) - Math.random() * 12);
         } else if (boss && !boss.ace && game.spawnTimer <= 0 && game.restTimer <= 0 && minions < minionCap) {
-          Math.random() > .45 ? spawnScoutSquad(danger) : spawnDivePair(danger);
+          const roll = Math.random();
+          if (roll < .42) spawnScoutSquad(danger);
+          else if (roll < .74) spawnDivePair(danger);
+          else if (game.stage > 1) spawnEliteWing(danger);
+          else spawnScoutSquad(danger);
           game.spawnTimer = game.stage === 1 ? 145 - strength * 30 + Math.random() * 35 : Math.max(34, 72 - strength * 18 - game.stage * 5 + Math.random() * 18);
         } else if (game.spawnTimer <= 0) {
           game.spawnTimer = 18;
@@ -1736,7 +1743,7 @@
         const boss = game.enemies.some(e => e.kind === "boss");
         const current = game.enemies.filter(e => e.kind !== "boss").length;
         const cap = boss ? bossSupportCap() : activeMinionCap();
-        const n = Math.min(cap - current, 2 + Math.floor(Math.random() * 2));
+        const n = Math.min(cap - current, 2 + Math.floor(Math.random() * 2) + (!boss && preBossRushActive() ? 1 : 0));
         if (n <= 0) return;
         const side = Math.random() > .5 ? 1 : -1;
         game.entryMarkers.push({ x: side > 0 ? 28 : W - 28, y: 118, vx: side * 48, life: 74, maxLife: 74, kind: "side", count: n });
@@ -1762,7 +1769,7 @@
         const boss = game.enemies.some(e => e.kind === "boss");
         const current = game.enemies.filter(e => e.kind !== "boss").length;
         const cap = boss ? bossSupportCap() : activeMinionCap();
-        const count = Math.min(cap - current, Math.random() > .35 ? 2 : 1);
+        const count = Math.min(cap - current, preBossRushActive() && !boss ? (Math.random() > .5 ? 3 : 2) : (Math.random() > .35 ? 2 : 1));
         if (count <= 0) return;
         game.entryMarkers.push({ x: W / 2, y: 46, vx: 0, life: 86, maxLife: 86, kind: "dive", count });
         for (let i = 0; i < count; i++) {
@@ -1785,29 +1792,44 @@
       }
 
       function spawnEliteWing(danger) {
+        const boss = game.enemies.some(e => e.kind === "boss");
+        const cap = boss ? bossSupportCap() : activeMinionCap();
         const current = game.enemies.filter(e => e.kind !== "boss").length;
-        if (current >= activeMinionCap()) return;
-        const kind = Math.random() > .5 ? "aceMinion" : "rocket";
-        game.entryMarkers.push({ x: W / 2, y: 56, vx: 0, life: 92, maxLife: 92, kind: "dive", count: 1 });
-        game.enemies.push({
-          kind,
-          elite: true,
-          x: 160 + Math.random() * (W - 320),
-          y: -90,
-          vx: Math.random() > .5 ? 2.1 : -2.1,
-          vy: kind === "rocket" ? 4.1 : 2.6,
-          r: kind === "rocket" ? 34 : 36,
-          hp: (kind === "rocket" ? 48 : 62) * selectedDifficulty.hp + danger * 12,
-          maxHp: (kind === "rocket" ? 48 : 62) * selectedDifficulty.hp + danger * 12,
-          fire: 38,
-          score: kind === "rocket" ? 520 : 640,
-          color: kind === "rocket" ? "#d94b4b" : "#5db8d9",
-          phase: Math.random() * 10
-        });
+        if (current >= cap) return;
+        const count = Math.min(cap - current, preBossRushActive() && !boss && Math.random() > .45 ? 2 : 1);
+        const eliteKinds = ["aceMinion", "rocket", "shieldElite", "flakElite", "commandElite"];
+        game.entryMarkers.push({ x: W / 2, y: 56, vx: 0, life: 92, maxLife: 92, kind: "dive", count });
+        for (let i = 0; i < count; i++) {
+          const kind = eliteKinds[Math.floor(Math.random() * eliteKinds.length)];
+          const spec = eliteSpec(kind, danger);
+          game.enemies.push({
+            kind,
+            elite: true,
+            x: clamp(150 + Math.random() * (W - 300) + (i - .5) * 70, 90, W - 90),
+            y: -95 - i * 44,
+            vx: (Math.random() > .5 ? 1 : -1) * spec.vx,
+            vy: spec.vy,
+            r: spec.r,
+            hp: spec.hp,
+            maxHp: spec.hp,
+            fire: spec.fire,
+            fireDelay: spec.fireDelay,
+            score: spec.score,
+            color: spec.color,
+            phase: Math.random() * 10
+          });
+        }
       }
 
       function spawnEliteBomber(danger) {
-        if (game.enemies.filter(e => e.kind !== "boss").length >= activeMinionCap()) return;
+        const boss = game.enemies.some(e => e.kind === "boss");
+        const cap = boss ? bossSupportCap() : activeMinionCap();
+        if (game.enemies.filter(e => e.kind !== "boss").length >= cap) return;
+        const eliteRoll = Math.random();
+        if (eliteRoll < .45 && playerStrength() > .55) {
+          spawnEliteWing(danger + .25);
+          return;
+        }
         game.enemies.push({
           kind: "bomberElite",
           elite: true,
@@ -1823,6 +1845,15 @@
           color: "#8c6a4b",
           phase: Math.random() * 10
         });
+      }
+
+      function eliteSpec(kind, danger) {
+        const hpScale = selectedDifficulty.hp;
+        if (kind === "rocket") return { vx: 2.5, vy: 4.15, r: 34, hp: (48 + danger * 12) * hpScale, fire: 34, fireDelay: 86, score: 520, color: "#d94b4b" };
+        if (kind === "shieldElite") return { vx: 1.35, vy: 2.1, r: 42, hp: (92 + danger * 16) * hpScale, fire: 46, fireDelay: 96, score: 760, color: "#6aa36e" };
+        if (kind === "flakElite") return { vx: 1.8, vy: 2.45, r: 38, hp: (72 + danger * 14) * hpScale, fire: 40, fireDelay: 88, score: 700, color: "#d6a64f" };
+        if (kind === "commandElite") return { vx: 1.15, vy: 1.95, r: 46, hp: (118 + danger * 18) * hpScale, fire: 54, fireDelay: 112, score: 920, color: "#9b7fd6" };
+        return { vx: 2.1, vy: 2.65, r: 36, hp: (62 + danger * 12) * hpScale, fire: 38, fireDelay: 92, score: 640, color: "#5db8d9" };
       }
 
       function spawnHeavy(danger) {
@@ -2012,7 +2043,12 @@
       }
 
       function activeMinionCap() {
-        return Math.max(BASE_ACTIVE_MINIONS, selectedDifficulty.enemyCap + Math.floor(Math.max(0, game.stage - 2) / 2));
+        const preBossBoost = preBossRushActive() ? (IS_MOBILE ? 1 : 3) : 0;
+        return Math.max(BASE_ACTIVE_MINIONS, selectedDifficulty.enemyCap + preBossBoost + Math.floor(Math.max(0, game.stage - 2) / 2));
+      }
+
+      function preBossRushActive() {
+        return !!game && !game.bossSpawned && game.bossTimer > BOSS_WARNING_TIME * .52 && game.bossTimer < BOSS_WARNING_TIME;
       }
 
       function spawnBossSupportWave() {
@@ -2221,7 +2257,7 @@
         if (e.fire <= 0) {
           enemyFire(e);
           const strength = playerStrength();
-          e.fire = (e.kind === "train" ? 118 : e.kind === "heavy" ? 104 : 126) - strength * 38;
+          e.fire = (e.fireDelay || (e.kind === "train" ? 118 : e.kind === "heavy" ? 104 : 126)) - strength * 36;
         }
       }
 
@@ -2304,6 +2340,22 @@
             addEnemyBullet(e.x - 44, e.y + 22, base, 4.2, 11, "#c88cff");
             addEnemyBullet(e.x + 44, e.y + 22, base, 4.2, 11, "#c88cff");
           }
+        } else if (e.kind === "shieldElite") {
+          addEnemyBullet(e.x - 24, e.y + 24, Math.PI / 2 - .1, 3.0, 10, "#9cffb0");
+          addEnemyBullet(e.x + 24, e.y + 24, Math.PI / 2 + .1, 3.0, 10, "#9cffb0");
+          if (strength > .55) addEnemyBullet(e.x, e.y + 34, base, 4.0, 11, "#f4f7f7");
+        } else if (e.kind === "flakElite") {
+          const spokes = strength > .62 ? 6 : 4;
+          for (let i = 0; i < spokes; i++) addEnemyBullet(e.x, e.y + 18, Math.PI / 2 + (i - (spokes - 1) / 2) * .18, 3.35, 8, "#ffd166");
+          addEnemyBullet(e.x, e.y + 26, base, 4.35, 10, "#ff8d5c");
+        } else if (e.kind === "commandElite") {
+          addEnemyBullet(e.x, e.y + 32, base, 4.1, 12, "#c88cff");
+          addEnemyBullet(e.x - 34, e.y + 22, Math.PI / 2 - .18, 3.45, 9, "#58c7ff");
+          addEnemyBullet(e.x + 34, e.y + 22, Math.PI / 2 + .18, 3.45, 9, "#58c7ff");
+          const nearby = game.enemies.filter(o => o !== e && o.kind !== "boss" && Math.abs(o.x - e.x) < 210 && Math.abs(o.y - e.y) < 180);
+          nearby.slice(0, 3).forEach(o => {
+            o.fire = Math.min(o.fire, 34 + Math.random() * 16);
+          });
         } else if (e.kind === "dive") {
           addEnemyBullet(e.x, e.y + 26, base, 3.8, 9, "#ff6d6a");
           if (strength > .45) {
@@ -2955,6 +3007,100 @@
             ctx.fillStyle = "rgba(18,55,28,.36)";
           }
         }
+        drawMapAccentRows(theme, s);
+        ctx.restore();
+      }
+
+      function drawMapAccentRows(theme, s) {
+        ctx.save();
+        ctx.globalAlpha = .44;
+        for (let y = -H + s; y < H * 1.45; y += 260) {
+          if (theme.id === "pearl") {
+            ctx.strokeStyle = "rgba(235,248,255,.12)";
+            ctx.lineWidth = 5;
+            for (let i = 0; i < 4; i++) {
+              ctx.beginPath();
+              ctx.moveTo(80 + i * 190, y + 40);
+              ctx.bezierCurveTo(140 + i * 160, y + 80, 70 + i * 210, y + 135, 160 + i * 150, y + 185);
+              ctx.stroke();
+            }
+            ctx.fillStyle = "rgba(70,82,88,.62)";
+            roundRect(W * .16, y + 92, 120, 30, 5);
+            roundRect(W * .72, y + 196, 150, 34, 5);
+            ctx.fill();
+          } else if (theme.id === "berlin") {
+            ctx.strokeStyle = "rgba(235,220,180,.14)";
+            ctx.lineWidth = 7;
+            ctx.beginPath();
+            ctx.moveTo(W * .5, y - 30);
+            ctx.lineTo(W * .43, y + 260);
+            ctx.stroke();
+            ctx.fillStyle = "rgba(32,28,26,.36)";
+            for (let i = 0; i < 4; i++) {
+              roundRect(70 + i * 190, y + 38 + (i % 2) * 48, 88, 70, 4);
+              ctx.fill();
+              ctx.fillRect(82 + i * 190, y + 54 + (i % 2) * 48, 14, 18);
+              ctx.fillRect(118 + i * 190, y + 76 + (i % 2) * 48, 18, 16);
+            }
+          } else if (theme.id === "stalingrad") {
+            ctx.strokeStyle = "rgba(28,20,16,.54)";
+            ctx.lineWidth = 9;
+            for (let i = 0; i < 3; i++) {
+              ctx.beginPath();
+              ctx.moveTo(60 + i * 240, y + 10);
+              ctx.lineTo(128 + i * 210, y + 72);
+              ctx.lineTo(72 + i * 230, y + 136);
+              ctx.lineTo(150 + i * 210, y + 218);
+              ctx.stroke();
+            }
+            ctx.fillStyle = "rgba(255,105,55,.18)";
+            ctx.beginPath();
+            ctx.ellipse(W * .52, y + 112, 74, 18, -.25, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (theme.id === "moscow") {
+            ctx.fillStyle = "rgba(255,255,255,.22)";
+            for (let i = 0; i < 5; i++) {
+              ctx.beginPath();
+              ctx.ellipse(85 + i * 170, y + 54 + (i % 2) * 88, 60, 16, -.18, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.strokeStyle = "rgba(70,90,95,.18)";
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(W * .18, y - 20);
+            ctx.bezierCurveTo(W * .42, y + 68, W * .34, y + 184, W * .72, y + 285);
+            ctx.stroke();
+          } else if (theme.id === "britain") {
+            ctx.strokeStyle = "rgba(245,235,170,.15)";
+            ctx.lineWidth = 4;
+            for (let i = 0; i < 5; i++) {
+              ctx.beginPath();
+              ctx.moveTo(45 + i * 170, y);
+              ctx.lineTo(120 + i * 160, y + 230);
+              ctx.stroke();
+            }
+            ctx.fillStyle = "rgba(80,110,48,.26)";
+            ctx.beginPath();
+            ctx.ellipse(W * .5, y + 118, 210, 48, .08, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.strokeStyle = "rgba(95,80,55,.22)";
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(W * .22, y - 10);
+            ctx.bezierCurveTo(W * .34, y + 70, W * .28, y + 160, W * .48, y + 270);
+            ctx.stroke();
+            ctx.fillStyle = "rgba(19,60,30,.32)";
+            for (let i = 0; i < 6; i++) {
+              ctx.beginPath();
+              ctx.moveTo(58 + i * 135, y + 56 + (i % 2) * 72);
+              ctx.lineTo(40 + i * 135, y + 104 + (i % 2) * 72);
+              ctx.lineTo(78 + i * 135, y + 104 + (i % 2) * 72);
+              ctx.closePath();
+              ctx.fill();
+            }
+          }
+        }
         ctx.restore();
       }
 
@@ -3192,6 +3338,58 @@
           ctx.fillStyle = "#ff5a57";
           ctx.fillRect(e.x - e.r, e.y + e.r * .52, e.r * 2 * (e.hp / e.maxHp), 5);
           ctx.restore();
+          return;
+        }
+        if (e.kind === "shieldElite") {
+          drawAircraft(e.x, e.y, e.r, e.color, "#d8ffe0", angle, false, false);
+          ctx.save();
+          ctx.strokeStyle = "rgba(156,255,176,.82)";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y + 3, e.r + 10 + Math.sin(game.t * .08) * 3, Math.PI * .12, Math.PI * .88);
+          ctx.stroke();
+          ctx.fillStyle = "rgba(156,255,176,.22)";
+          ctx.beginPath();
+          ctx.ellipse(e.x, e.y + e.r * .36, e.r * 1.18, e.r * .3, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          drawHealthArc(e);
+          return;
+        }
+        if (e.kind === "flakElite") {
+          drawAircraft(e.x, e.y, e.r, e.color, "#fff1b3", angle, false, false);
+          ctx.save();
+          ctx.fillStyle = "rgba(20,20,18,.55)";
+          for (let i = -1; i <= 1; i++) {
+            ctx.fillRect(e.x + i * e.r * .42 - 4, e.y + e.r * .08, 8, e.r * .78);
+          }
+          ctx.strokeStyle = "#ffd166";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(e.x - e.r * .9, e.y - e.r * .24);
+          ctx.lineTo(e.x + e.r * .9, e.y - e.r * .24);
+          ctx.stroke();
+          ctx.restore();
+          drawHealthArc(e);
+          return;
+        }
+        if (e.kind === "commandElite") {
+          drawAircraft(e.x, e.y, e.r, e.color, "#f0ddff", angle, false, false);
+          ctx.save();
+          ctx.strokeStyle = "rgba(200,140,255,.86)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r + 10, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = "rgba(255,209,102,.78)";
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y - e.r * 1.25);
+          ctx.lineTo(e.x + e.r * .28, e.y - e.r * .72);
+          ctx.lineTo(e.x - e.r * .28, e.y - e.r * .72);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+          drawHealthArc(e);
           return;
         }
         drawAircraft(e.x, e.y, e.r, e.color, "#c3c0ad", angle, false, false);
