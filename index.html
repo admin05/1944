@@ -916,7 +916,7 @@
         <div class="hud-bottom">
           <div class="weapon-strip" id="weaponStrip"></div>
           <div class="stat">
-            <span class="label">生命 / 炸弹</span>
+            <span class="label">生命 / 炸弹 / 魔法</span>
             <span class="value" id="life">3 / 3</span>
           </div>
         </div>
@@ -1211,6 +1211,9 @@
             fire: 0,
             secondaryFire: 0,
             skillCooldown: 0,
+            mana: 100,
+            maxMana: 100,
+            manaRegen: .08,
             bomberMode: 0,
             bomberFire: 0,
             mainLevel: 1,
@@ -1567,6 +1570,7 @@
         p.fire -= dt;
         p.secondaryFire -= dt;
         p.skillCooldown -= dt;
+        p.mana = Math.min(p.maxMana, p.mana + p.manaRegen * (1 + p.cooldownLevel * .12) * dt);
         p.bomberMode = Math.max(0, p.bomberMode - dt);
         p.bomberFire -= dt;
         p.inv = Math.max(0, p.inv - dt);
@@ -1697,6 +1701,13 @@
         if (actionLocked()) return;
         const p = game.player;
         if (p.skillCooldown > 0) return;
+        const cost = skillManaCost(p);
+        if (p.mana < cost) {
+          sfx("hurt");
+          flash = Math.max(flash, 6);
+          return;
+        }
+        p.mana -= cost;
         p.skillCooldown = Math.max(160, 360 - p.skillLevel * 28 - p.cooldownLevel * 26);
         sfx("boss");
         if (p.plane.id === "falcon") {
@@ -1731,6 +1742,17 @@
           p.wingman = Math.min(8, p.wingman + 1 + p.skillLevel);
           p.shield = Math.min(5, p.shield + 1 + p.skillLevel * .35);
         }
+      }
+
+      function skillManaCost(p) {
+        return Math.min(95, 42 + p.skillLevel * 8);
+      }
+
+      function skillChipText(p) {
+        if (p.skillCooldown > 0) return `技能${Math.ceil(p.skillCooldown / 60)}`;
+        const cost = skillManaCost(p);
+        if (p.mana < cost) return `魔法${Math.ceil(cost - p.mana)}`;
+        return p.plane.skillName;
       }
 
       function upgradeOptions() {
@@ -4225,7 +4247,8 @@
           stageEl.textContent = stageText;
           hudCache.stage = stageText;
         }
-        const lifeText = `${Math.max(0, p.hp)} / ${p.bombs}`;
+        const manaText = `${Math.floor(p.mana)}`;
+        const lifeText = `${Math.max(0, p.hp)} / ${p.bombs} / ${manaText}`;
         if (hudCache.life !== lifeText) {
           lifeEl.textContent = lifeText;
           hudCache.life = lifeText;
@@ -4249,7 +4272,7 @@
           ["散弹", p.spread > 1],
           ["导弹", p.missile > 0],
           [p.bomberMode > 0 ? `轰炸${Math.ceil(p.bomberMode / 60)}` : "轰炸", p.bomberMode > 0],
-          [p.skillCooldown > 0 ? `技能${Math.ceil(p.skillCooldown / 60)}` : p.plane.skillName, p.skillCooldown <= 0]
+          [skillChipText(p), p.skillCooldown <= 0 && p.mana >= skillManaCost(p)]
         ];
         const chipText = chips.map(([name, on]) => `${name}:${on ? 1 : 0}`).join("|");
         if (hudCache.chips !== chipText) {
