@@ -1040,6 +1040,9 @@
         bomb: { label: "炸弹", color: "#b7ff5a" },
         bomber: { label: "轰炸", color: "#ffec9c" }
       };
+      const DAMAGE_PHYSICAL = "physical";
+      const DAMAGE_MAGIC = "magic";
+      const DAMAGE_PURE = "pure";
       const BASE_ACTIVE_MINIONS = 8;
       const FIRST_BOSS_SUPPORT_MINIONS = 3;
       const LATER_BOSS_SUPPORT_MINIONS = 11;
@@ -1581,12 +1584,12 @@
           const x = clamp(p.x + dx, 70, W - 70);
           const y = waveY - Math.abs(dx) * .25;
           game.bombWaves.push({ x, y, life: 42, maxLife: 42, r: 12, color: i % 2 ? "#ffd166" : "#f4f7f7" });
-          game.missiles.push({ x, y: p.y - 20, vx: dx * .012, vy: -12, r: 11, dmg: 92, life: 52, bombFx: true });
+          game.missiles.push({ x, y: p.y - 20, vx: dx * .012, vy: -12, r: 11, dmg: 92, damageType: DAMAGE_PURE, life: 52, bombFx: true });
         });
         game.enemies.forEach(e => {
           if (e.hp <= 0) return;
           if (Math.abs(e.x - p.x) < 260 && e.y < p.y + 40) {
-            e.hp -= e.kind === "boss" ? 80 : 120;
+            applyDamage(e, e.kind === "boss" ? 80 : 120, DAMAGE_PURE);
             spark(e.x, e.y, "#ffd166", 3);
             if (e.hp <= 0) killEnemy(e);
           }
@@ -1651,23 +1654,24 @@
             vy: -15.5,
             r: 5,
             dmg: 7 + p.power * 2 + p.mainLevel * 2,
+            damageType: DAMAGE_PHYSICAL,
             type: "shot",
             color: p.plane.color
           });
         }
         if (p.laser > 0) {
-          game.bullets.push({ x: p.x, y: p.y - 70, vx: 0, vy: -24, r: 8, dmg: 18 + p.power * 3, type: "laser", color: "#c88cff" });
+          game.bullets.push({ x: p.x, y: p.y - 70, vx: 0, vy: -24, r: 8, dmg: 18 + p.power * 3, damageType: DAMAGE_PHYSICAL, type: "laser", color: "#c88cff" });
           p.laser -= .025;
         }
         if (p.missile > 0 && game.t % 18 < 1) {
-          game.missiles.push({ x: p.x - 22, y: p.y - 8, vx: -1.3, vy: -8, r: 8, dmg: 34, life: 150 });
-          game.missiles.push({ x: p.x + 22, y: p.y - 8, vx: 1.3, vy: -8, r: 8, dmg: 34, life: 150 });
+          game.missiles.push({ x: p.x - 22, y: p.y - 8, vx: -1.3, vy: -8, r: 8, dmg: 34, damageType: DAMAGE_PHYSICAL, life: 150 });
+          game.missiles.push({ x: p.x + 22, y: p.y - 8, vx: 1.3, vy: -8, r: 8, dmg: 34, damageType: DAMAGE_PHYSICAL, life: 150 });
           sfx("missile");
           p.missile -= .08;
         }
         if (p.wingman > 0) {
           [-54, 54].forEach((dx) => {
-            game.bullets.push({ x: p.x + dx, y: p.y - 18, vx: dx * .025, vy: -13, r: 4, dmg: 7 + p.power, type: "wing", color: "#49db9a" });
+            game.bullets.push({ x: p.x + dx, y: p.y - 18, vx: dx * .025, vy: -13, r: 4, dmg: 7 + p.power, damageType: DAMAGE_PHYSICAL, type: "wing", color: "#49db9a" });
           });
         }
       }
@@ -1679,12 +1683,12 @@
         p.secondaryFire = Math.max(18, 36 - p.secondaryLevel * 4);
         sfx("missile");
         if (p.plane.id === "atlas") {
-          game.missiles.push({ x: p.x, y: p.y - 18, vx: 0, vy: -6, r: 14 + p.secondaryLevel, dmg: 70 + p.power * 5 + p.secondaryLevel * 18, life: 180 });
+          game.missiles.push({ x: p.x, y: p.y - 18, vx: 0, vy: -6, r: 14 + p.secondaryLevel, dmg: 70 + p.power * 5 + p.secondaryLevel * 18, damageType: DAMAGE_PHYSICAL, life: 180 });
         } else if (p.plane.id === "comet") {
-          game.bullets.push({ x: p.x, y: p.y - 80, vx: 0, vy: -26, r: 10 + p.secondaryLevel, dmg: 34 + p.power * 4 + p.secondaryLevel * 12, type: "laser", color: "#49db9a" });
+          game.bullets.push({ x: p.x, y: p.y - 80, vx: 0, vy: -26, r: 10 + p.secondaryLevel, dmg: 34 + p.power * 4 + p.secondaryLevel * 12, damageType: DAMAGE_PHYSICAL, type: "laser", color: "#49db9a" });
         } else {
           [-1, 1].forEach(side => {
-            game.missiles.push({ x: p.x + side * (28 + p.secondaryLevel * 4), y: p.y - 8, vx: side * 2.4, vy: -8, r: 9, dmg: 38 + p.power * 3 + p.secondaryLevel * 10, life: 155 });
+            game.missiles.push({ x: p.x + side * (28 + p.secondaryLevel * 4), y: p.y - 8, vx: side * 2.4, vy: -8, r: 9, dmg: 38 + p.power * 3 + p.secondaryLevel * 10, damageType: DAMAGE_PHYSICAL, life: 155 });
           });
         }
       }
@@ -1696,16 +1700,24 @@
         p.skillCooldown = Math.max(160, 360 - p.skillLevel * 28 - p.cooldownLevel * 26);
         sfx("boss");
         if (p.plane.id === "falcon") {
-          game.bullets.push({ x: p.x, y: p.y - 120, vx: 0, vy: -32, r: 18 + p.skillLevel * 3, dmg: 170 + p.skillLevel * 55, type: "laser", color: "#6bd6ff" });
+          game.bullets.push({ x: p.x, y: p.y - 120, vx: 0, vy: -32, r: 18 + p.skillLevel * 3, dmg: 170 + p.skillLevel * 55, damageType: DAMAGE_MAGIC, type: "laser", color: "#6bd6ff" });
         } else if (p.plane.id === "raiden") {
           const arc = 7 + p.skillLevel;
           for (let i = -arc; i <= arc; i++) {
-            game.bullets.push({ x: p.x, y: p.y - 40, vx: i * .85, vy: -15 + Math.abs(i) * .25, r: 7, dmg: 28 + p.skillLevel * 5, type: "shot", color: "#ff5a57" });
+            game.bullets.push({ x: p.x, y: p.y - 40, vx: i * .85, vy: -15 + Math.abs(i) * .25, r: 7, dmg: 28 + p.skillLevel * 5, damageType: DAMAGE_MAGIC, type: "shot", color: "#ff5a57" });
           }
         } else if (p.plane.id === "atlas") {
           explode(p.x, p.y - 170, "#ffd166", 24, 1.4);
-          game.enemies.forEach(e => e.hp -= e.kind === "boss" ? 240 + p.skillLevel * 75 : 160 + p.skillLevel * 45);
-          game.turrets.forEach(t => t.hp -= 140 + p.skillLevel * 55);
+          game.enemies.forEach(e => {
+            if (e.hp <= 0) return;
+            applyDamage(e, e.kind === "boss" ? 240 + p.skillLevel * 75 : 160 + p.skillLevel * 45, DAMAGE_MAGIC);
+            if (e.hp <= 0) killEnemy(e);
+          });
+          game.turrets.forEach(t => {
+            if (t.hp <= 0) return;
+            applyDamage(t, 140 + p.skillLevel * 55, DAMAGE_MAGIC);
+            if (t.hp <= 0) killTurret(t);
+          });
         } else if (p.plane.id === "comet") {
           slow = .42;
           p.inv = Math.max(p.inv, 130 + p.skillLevel * 20);
@@ -1713,7 +1725,7 @@
           const count = 24 + p.skillLevel * 6;
           for (let i = 0; i < count; i++) {
             const a = Math.PI * 2 * i / count;
-            game.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, r: 6, dmg: 26 + p.skillLevel * 4, type: "shot", color: "#c88cff" });
+            game.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, r: 6, dmg: 26 + p.skillLevel * 4, damageType: DAMAGE_MAGIC, type: "shot", color: "#c88cff" });
           }
         } else if (p.plane.id === "mustang") {
           p.wingman = Math.min(8, p.wingman + 1 + p.skillLevel);
@@ -2668,19 +2680,43 @@
         return Math.round((10 + elitePressure + stagePressure + playerStrength() * (MAX_ENEMY_BULLETS - 10)) * selectedDifficulty.bullet);
       }
 
+      function resistanceOf(target, damageType) {
+        if (damageType === DAMAGE_PURE) return 0;
+        if (target.kind !== "boss" && !target.elite) return 0;
+        const stageResist = Math.min(.12, Math.max(0, game.stage - 1) * .015);
+        if (target.kind === "boss") {
+          const bossBase = target.ace ? .18 : target.bossType === "tank" ? .34 : target.bossType === "carrier" ? .26 : .22;
+          const magicBase = target.ace ? .24 : target.bossType === "fortress" ? .32 : target.bossType === "carrier" ? .24 : .2;
+          return clamp((damageType === DAMAGE_PHYSICAL ? bossBase : magicBase) + stageResist, 0, .62);
+        }
+        const physical = target.kind === "shieldElite" ? .3 : target.kind === "bomberElite" ? .24 : target.kind === "rocket" ? .12 : .18;
+        const magic = target.kind === "commandElite" ? .3 : target.kind === "flakElite" ? .24 : target.kind === "aceMinion" ? .22 : .16;
+        return clamp((damageType === DAMAGE_PHYSICAL ? physical : magic) + stageResist * .6, 0, .5);
+      }
+
+      function damageAfterResistance(target, amount, damageType = DAMAGE_PHYSICAL) {
+        return amount * (1 - resistanceOf(target, damageType));
+      }
+
+      function applyDamage(target, amount, damageType = DAMAGE_PHYSICAL) {
+        const finalDamage = damageAfterResistance(target, amount, damageType);
+        target.hp -= finalDamage;
+        return finalDamage;
+      }
+
       function collide() {
         const p = game.player;
         for (const b of game.bullets) {
           for (const e of game.enemies) {
             if (e.hp <= 0) continue;
-            if (e.kind === "boss" && hitBossPart(e, b, b.dmg)) {
+            if (e.kind === "boss" && hitBossPart(e, b, b.dmg, b.damageType || DAMAGE_PHYSICAL)) {
               b.y = -999;
               sfx("hit");
               spark(b.x, b.y, b.color, 3);
               break;
             }
             if (hit(b, e, b.r + e.r * .72)) {
-              e.hp -= b.dmg;
+              applyDamage(e, b.dmg, b.damageType || DAMAGE_PHYSICAL);
               b.y = -999;
               sfx("hit");
               spark(b.x, b.y, b.color, 2);
@@ -2692,7 +2728,7 @@
           for (const t of game.turrets) {
             if (t.hp <= 0) continue;
             if (hit(b, t, b.r + t.r)) {
-              t.hp -= b.dmg;
+              applyDamage(t, b.dmg, b.damageType || DAMAGE_PHYSICAL);
               b.y = -999;
               sfx("hit");
               spark(b.x, b.y, b.color, 2);
@@ -2704,14 +2740,14 @@
         for (const m of game.missiles) {
           for (const e of game.enemies) {
             if (e.hp <= 0) continue;
-            if (e.kind === "boss" && hitBossPart(e, m, m.dmg)) {
+            if (e.kind === "boss" && hitBossPart(e, m, m.dmg, m.damageType || DAMAGE_PHYSICAL)) {
               m.life = 0;
               sfx("boom");
               explode(m.x, m.y, "#ffd166", 8, .7);
               break;
             }
             if (hit(m, e, m.r + e.r * .75)) {
-              e.hp -= m.dmg;
+              applyDamage(e, m.dmg, m.damageType || DAMAGE_PHYSICAL);
               m.life = 0;
               sfx("boom");
               explode(m.x, m.y, "#ffd166", 8, .7);
@@ -2723,7 +2759,7 @@
           for (const t of game.turrets) {
             if (t.hp <= 0) continue;
             if (hit(m, t, m.r + t.r)) {
-              t.hp -= m.dmg;
+              applyDamage(t, m.dmg, m.damageType || DAMAGE_PHYSICAL);
               m.life = 0;
               sfx("boom");
               explode(m.x, m.y, "#ffd166", 8, .7);
@@ -2741,7 +2777,7 @@
         for (const e of game.enemies) {
           if (e.hp <= 0) continue;
           if (p.inv <= 0 && hit(e, p, e.r * .62 + p.r * .62)) {
-            e.hp -= 70;
+            applyDamage(e, 70, DAMAGE_PHYSICAL);
             damagePlayer(e.kind === "boss" ? 2 : 1);
             if (e.hp <= 0) killEnemy(e);
           }
@@ -2754,13 +2790,13 @@
         }
       }
 
-      function hitBossPart(boss, shot, damage) {
+      function hitBossPart(boss, shot, damage, damageType = DAMAGE_PHYSICAL) {
         if (!boss.parts) return false;
         for (const part of boss.parts) {
           if (part.destroyed || part.hp <= 0) continue;
           const pos = bossPartPosition(boss, part);
           if ((shot.x - pos.x) ** 2 + (shot.y - pos.y) ** 2 < (shot.r + part.r) ** 2) {
-            part.hp -= damage;
+            part.hp -= damageAfterResistance(boss, damage, damageType);
             if (part.hp <= 0) {
               part.destroyed = true;
               explode(pos.x, pos.y, "#ff8d5c", 14, .9);
@@ -2931,13 +2967,13 @@
         game.bombWaves.push({ x: p.x, y: p.y - 40, life: 78, maxLife: 78, r: 24, color: "#f4f7f7" });
         for (let i = -2; i <= 2; i++) {
           game.bombWaves.push({ x: p.x + i * 70, y: p.y - 80 - Math.abs(i) * 28, life: 62, maxLife: 62, r: 16, color: i === 0 ? "#f4f7f7" : "#ffd166" });
-          game.missiles.push({ x: p.x + i * 14, y: p.y - 18, vx: i * .55, vy: -13 - Math.abs(i), r: 10, dmg: 120, life: 58, bombFx: true });
+          game.missiles.push({ x: p.x + i * 14, y: p.y - 18, vx: i * .55, vy: -13 - Math.abs(i), r: 10, dmg: 120, damageType: DAMAGE_PURE, life: 58, bombFx: true });
         }
         explode(p.x, p.y - 30, "#f4f7f7", 18, 1.6);
         game.enemyBullets.length = 0;
         game.enemies.forEach(e => {
           if (e.hp <= 0) return;
-          e.hp -= e.kind === "boss" ? 360 : 220;
+          applyDamage(e, e.kind === "boss" ? 360 : 220, DAMAGE_PURE);
           spark(e.x, e.y, "#f4f7f7", 6);
           if (e.hp <= 0) killEnemy(e);
         });
