@@ -1040,20 +1040,20 @@
         bomb: { label: "炸弹", color: "#b7ff5a" },
         bomber: { label: "轰炸", color: "#ffec9c" }
       };
-      const BASE_ACTIVE_MINIONS = 6;
-      const FIRST_BOSS_SUPPORT_MINIONS = 2;
-      const LATER_BOSS_SUPPORT_MINIONS = 8;
-      const LATER_BOSS_INITIAL_SUPPORT = 6;
+      const BASE_ACTIVE_MINIONS = 8;
+      const FIRST_BOSS_SUPPORT_MINIONS = 3;
+      const LATER_BOSS_SUPPORT_MINIONS = 11;
+      const LATER_BOSS_INITIAL_SUPPORT = 8;
       const BOSS_WARNING_TIME = 820;
       const BOSS_SPAWN_TIME = 950;
       const MAX_PARTICLES = 42;
       const MAX_TRAILS = 18;
-      const MAX_ENEMY_BULLETS = 38;
+      const MAX_ENEMY_BULLETS = 44;
       const IS_MOBILE = window.innerWidth <= 860;
       const difficulties = [
-        { id: "normal", name: "普通", enemyCap: 6, bullet: 1, hp: 1, drop: .55, shieldDrop: .28 },
-        { id: "hard", name: "困难", enemyCap: 7, bullet: 1.22, hp: 1.18, drop: .42, shieldDrop: .2 },
-        { id: "inferno", name: "炼狱", enemyCap: 8, bullet: 1.45, hp: 1.35, drop: .32, shieldDrop: .14 }
+        { id: "normal", name: "普通", enemyCap: 8, bullet: 1, hp: 1, drop: .55, shieldDrop: .28 },
+        { id: "hard", name: "困难", enemyCap: 9, bullet: 1.22, hp: 1.18, drop: .42, shieldDrop: .2 },
+        { id: "inferno", name: "炼狱", enemyCap: 10, bullet: 1.45, hp: 1.35, drop: .32, shieldDrop: .14 }
       ];
       const mapThemes = [
         { id: "ardennes", name: "阿登森林", sky: ["#24352f", "#345139", "#233428"], terrain: ["forest", "road", "bunker"], cloud: "#dce8df" },
@@ -1758,7 +1758,7 @@
 
       function updateTrainingMode(dt, danger, minions) {
         const trainingDanger = Math.min(2.15, danger);
-        const trainingCap = Math.min(activeMinionCap() + 1, 7 + Math.floor(playerStrength() * 2));
+        const trainingCap = Math.min(activeMinionCap() + 2, 9 + Math.floor(playerStrength() * 2));
         if (game.spawnTimer <= 0 && game.restTimer <= 0 && minions < trainingCap) {
           const roll = Math.random();
           if (roll < .3) spawnScoutSquad(trainingDanger);
@@ -1766,7 +1766,7 @@
           else if (roll < .84 && playerStrength() > .04) spawnEliteWing(trainingDanger);
           else if (roll < .97 && playerStrength() > .14) spawnEliteBomber(trainingDanger);
           else spawnHeavy(trainingDanger * .85);
-          game.spawnTimer = 54 + Math.random() * 26 - playerStrength() * 18;
+          game.spawnTimer = 44 + Math.random() * 22 - playerStrength() * 18;
         } else if (game.spawnTimer <= 0) {
           game.spawnTimer = 22;
         }
@@ -1810,8 +1810,8 @@
           else if (roll < (preBossRush ? .9 : .93) && (strength > .14 || preBossRush)) spawnEliteBomber(danger);
           else if (strength > .1) spawnHeavy(danger);
           else spawnScoutSquad(danger);
-          const minInterval = preBossRush ? (IS_MOBILE ? 46 : 38) : (IS_MOBILE ? 58 : 50);
-          game.spawnTimer = Math.max(minInterval, 112 - danger * 6 - strength * 30 - (preBossRush ? 22 : 0) - Math.random() * 16);
+          const minInterval = preBossRush ? (IS_MOBILE ? 38 : 30) : (IS_MOBILE ? 50 : 42);
+          game.spawnTimer = Math.max(minInterval, 96 - danger * 7 - strength * 32 - (preBossRush ? 24 : 0) - Math.random() * 18);
         } else if (boss && !boss.ace && game.spawnTimer <= 0 && game.restTimer <= 0 && minions < minionCap) {
           const roll = Math.random();
           if (roll < .28) spawnScoutSquad(danger);
@@ -1819,7 +1819,7 @@
           else if (roll < (game.stage > 2 ? .78 : .86)) spawnEliteWing(danger);
           else if (game.stage > 2) spawnEliteBomber(danger);
           else spawnScoutSquad(danger);
-          game.spawnTimer = game.stage === 1 ? 118 - strength * 28 + Math.random() * 24 : Math.max(IS_MOBILE ? 42 : 32, 62 - strength * 20 - game.stage * 5 + Math.random() * 14);
+          game.spawnTimer = game.stage === 1 ? 96 - strength * 28 + Math.random() * 20 : Math.max(IS_MOBILE ? 34 : 26, 54 - strength * 22 - game.stage * 5 + Math.random() * 12);
         } else if (game.spawnTimer <= 0) {
           game.spawnTimer = 18;
         }
@@ -1849,7 +1849,7 @@
         const boss = game.enemies.some(e => e.kind === "boss");
         const current = game.enemies.filter(e => e.kind !== "boss").length;
         const cap = boss ? bossSupportCap() : activeMinionCap();
-        const n = Math.min(cap - current, 2 + Math.floor(Math.random() * 2) + (!boss && preBossRushActive() ? 1 : 0));
+        const n = Math.min(cap - current, 3 + Math.floor(Math.random() * 2) + (!boss && preBossRushActive() ? 1 : 0) + (boss && game.stage > 1 ? 1 : 0));
         if (n <= 0) return;
         const side = Math.random() > .5 ? 1 : -1;
         game.entryMarkers.push({ x: side > 0 ? 28 : W - 28, y: 118, vx: side * 48, life: 74, maxLife: 74, kind: "side", count: n });
@@ -1879,7 +1879,7 @@
         const boss = game.enemies.some(e => e.kind === "boss");
         const current = game.enemies.filter(e => e.kind !== "boss").length;
         const cap = boss ? bossSupportCap() : activeMinionCap();
-        const count = Math.min(cap - current, preBossRushActive() && !boss ? (Math.random() > .5 ? 3 : 2) : (Math.random() > .35 ? 2 : 1));
+        const count = Math.min(cap - current, preBossRushActive() && !boss ? (Math.random() > .45 ? 4 : 3) : boss ? (Math.random() > .55 ? 3 : 2) : (Math.random() > .28 ? 3 : 2));
         if (count <= 0) return;
         game.entryMarkers.push({ x: W / 2, y: 46, vx: 0, life: 86, maxLife: 86, kind: "dive", count });
         for (let i = 0; i < count; i++) {
@@ -2216,9 +2216,10 @@
       }
 
       function activeMinionCap() {
-        const preBossBoost = preBossRushActive() ? (IS_MOBILE ? 1 : 3) : 0;
+        const preBossBoost = preBossRushActive() ? (IS_MOBILE ? 2 : 4) : 0;
         const eliteBoost = game && !game.bossSpawned ? (IS_MOBILE ? 1 : 2) : 0;
-        return Math.max(BASE_ACTIVE_MINIONS, selectedDifficulty.enemyCap + preBossBoost + eliteBoost + Math.floor(Math.max(0, game.stage - 2) / 2));
+        const stageBoost = Math.floor(Math.max(0, game.stage - 2) / 2);
+        return Math.max(BASE_ACTIVE_MINIONS, selectedDifficulty.enemyCap + preBossBoost + eliteBoost + stageBoost);
       }
 
       function preBossRushActive() {
@@ -2403,7 +2404,7 @@
             e.fire -= dt;
             if (e.fire <= 0) {
               bossFire(e, e.hp / e.maxHp);
-              e.fire = 36 + Math.random() * 14;
+              e.fire = 24 + Math.random() * 10;
             }
             return;
           }
@@ -2419,8 +2420,8 @@
           e.fire -= dt;
           if (e.fire <= 0) {
             bossFire(e, hpRatio);
-            const base = e.bossType === "carrier" ? 58 : e.bossType === "tank" ? 54 : 62;
-            e.fire = hpRatio < .35 ? base - 16 : hpRatio < .68 ? base - 8 : base;
+            const base = e.bossType === "carrier" ? 42 : e.bossType === "tank" ? 40 : 46;
+            e.fire = hpRatio < .35 ? base - 14 : hpRatio < .68 ? base - 7 : base;
           }
           return;
         }
@@ -2478,7 +2479,7 @@
               addEnemyBullet(pos.x, pos.y, a - .14, 3.2, 8, "#ffd166");
               addEnemyBullet(pos.x, pos.y, a + .14, 3.2, 8, "#ffd166");
             }
-            part.fire = (boss.bossType === "carrier" ? 56 : boss.bossType === "tank" ? 68 : 62) - strength * 18 + Math.random() * 18;
+            part.fire = (boss.bossType === "carrier" ? 42 : boss.bossType === "tank" ? 50 : 46) - strength * 16 + Math.random() * 12;
           }
         }
       }
