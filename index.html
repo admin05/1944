@@ -1947,9 +1947,10 @@
           vx: Math.random() > .5 ? .9 : -.9,
           vy: 1.25,
           r: 62,
-          hp: (138 + danger * 24) * selectedDifficulty.hp,
-          maxHp: (138 + danger * 24) * selectedDifficulty.hp,
-          fire: 46,
+          hp: (186 + danger * 34) * selectedDifficulty.hp,
+          maxHp: (186 + danger * 34) * selectedDifficulty.hp,
+          fire: 34,
+          fireDelay: 74,
           score: 980,
           color: "#8c6a4b",
           phase: Math.random() * 10
@@ -1958,11 +1959,11 @@
 
       function eliteSpec(kind, danger) {
         const hpScale = selectedDifficulty.hp;
-        if (kind === "rocket") return { vx: 2.5, vy: 4.15, r: 34, hp: (48 + danger * 12) * hpScale, fire: 34, fireDelay: 86, score: 520, color: "#d94b4b" };
-        if (kind === "shieldElite") return { vx: 1.35, vy: 2.1, r: 42, hp: (92 + danger * 16) * hpScale, fire: 46, fireDelay: 96, score: 760, color: "#6aa36e" };
-        if (kind === "flakElite") return { vx: 1.8, vy: 2.45, r: 38, hp: (72 + danger * 14) * hpScale, fire: 40, fireDelay: 88, score: 700, color: "#d6a64f" };
-        if (kind === "commandElite") return { vx: 1.15, vy: 1.95, r: 46, hp: (118 + danger * 18) * hpScale, fire: 54, fireDelay: 112, score: 920, color: "#9b7fd6" };
-        return { vx: 2.1, vy: 2.65, r: 36, hp: (62 + danger * 12) * hpScale, fire: 38, fireDelay: 92, score: 640, color: "#5db8d9" };
+        if (kind === "rocket") return { vx: 3.0, vy: 4.45, r: 35, hp: (72 + danger * 16) * hpScale, fire: 24, fireDelay: 62, score: 620, color: "#d94b4b" };
+        if (kind === "shieldElite") return { vx: 1.5, vy: 2.25, r: 44, hp: (138 + danger * 22) * hpScale, fire: 34, fireDelay: 72, score: 880, color: "#6aa36e" };
+        if (kind === "flakElite") return { vx: 2.05, vy: 2.6, r: 40, hp: (104 + danger * 20) * hpScale, fire: 28, fireDelay: 66, score: 820, color: "#d6a64f" };
+        if (kind === "commandElite") return { vx: 1.35, vy: 2.05, r: 48, hp: (162 + danger * 26) * hpScale, fire: 40, fireDelay: 82, score: 1080, color: "#9b7fd6" };
+        return { vx: 2.35, vy: 2.8, r: 38, hp: (88 + danger * 16) * hpScale, fire: 30, fireDelay: 70, score: 760, color: "#5db8d9" };
       }
 
       function spawnHeavy(danger) {
@@ -2384,8 +2385,7 @@
           }
           return;
         }
-        e.x += (e.vx + Math.sin(e.phase * .05) * (e.kind === "heavy" ? 1.6 : .7)) * dt;
-        e.y += e.vy * dt;
+        updateEnemyManeuver(e, dt);
         keepEnemyOnBattlefield(e);
         e.fire -= dt;
         if (e.fire <= 0) {
@@ -2393,6 +2393,35 @@
           const strength = playerStrength();
           e.fire = (e.fireDelay || (e.kind === "train" ? 118 : e.kind === "heavy" ? 104 : 126)) - strength * 36;
         }
+      }
+
+      function updateEnemyManeuver(e, dt) {
+        const p = game.player;
+        let sway = e.kind === "heavy" ? 1.6 : .7;
+        if (e.elite) sway = e.kind === "bomberElite" ? 1.25 : 1.8;
+        if (e.kind === "rocket") {
+          const targetX = clamp(p.x, 110, W - 110);
+          e.vx += Math.sign(targetX - e.x) * .045 * dt;
+          e.vx = clamp(e.vx, -4.4, 4.4);
+          if (e.y > 90 && e.y < H * .42) e.vy = Math.min(5.35, e.vy + .018 * dt);
+        } else if (e.kind === "shieldElite") {
+          if (e.y > 115) e.vy = Math.max(.75, e.vy * .985);
+          if (e.y > 150 && Math.abs(e.x - p.x) > 36) e.vx += Math.sign(p.x - e.x) * .018 * dt;
+          e.vx = clamp(e.vx, -2.2, 2.2);
+        } else if (e.kind === "flakElite") {
+          e.vx += Math.sin(e.phase * .045) * .035 * dt;
+          e.vx = clamp(e.vx, -3.0, 3.0);
+        } else if (e.kind === "commandElite") {
+          if (e.y > 120) e.vy = Math.max(.65, e.vy * .988);
+          e.vx += Math.sin(e.phase * .032) * .028 * dt;
+          e.vx = clamp(e.vx, -2.4, 2.4);
+        } else if (e.kind === "bomberElite") {
+          if (e.y > 125) e.vy = Math.max(.7, e.vy * .99);
+          e.vx += Math.sin(e.phase * .026) * .02 * dt;
+          e.vx = clamp(e.vx, -1.7, 1.7);
+        }
+        e.x += (e.vx + Math.sin(e.phase * .05) * sway) * dt;
+        e.y += e.vy * dt;
       }
 
       function updateBossParts(boss, dt) {
@@ -2464,31 +2493,42 @@
         } else if (e.kind === "aceMinion") {
           addEnemyBullet(e.x - 18, e.y + 24, base - .08, 4.6, 9, "#58c7ff");
           addEnemyBullet(e.x + 18, e.y + 24, base + .08, 4.6, 9, "#58c7ff");
-          if (strength > .5) addEnemyBullet(e.x, e.y + 20, Math.PI / 2, 3.4, 8, "#ffd166");
-        } else if (e.kind === "rocket") {
-          addEnemyBullet(e.x, e.y + 30, base, 5.4, 12, "#ff5a57");
-          addEnemyBullet(e.x, e.y + 12, Math.PI / 2, 4.8, 9, "#ffd166");
-        } else if (e.kind === "bomberElite") {
-          for (let i = -2; i <= 2; i++) addEnemyBullet(e.x + i * 22, e.y + 42, Math.PI / 2 + i * .08, 3.2, 10, "#ff8d5c");
+          addEnemyBullet(e.x, e.y + 20, Math.PI / 2, 3.7, 8, "#ffd166");
           if (strength > .45) {
-            addEnemyBullet(e.x - 44, e.y + 22, base, 4.2, 11, "#c88cff");
-            addEnemyBullet(e.x + 44, e.y + 22, base, 4.2, 11, "#c88cff");
+            addEnemyBullet(e.x - 32, e.y + 18, Math.PI / 2 - .18, 3.6, 7, "#f4f7f7");
+            addEnemyBullet(e.x + 32, e.y + 18, Math.PI / 2 + .18, 3.6, 7, "#f4f7f7");
+          }
+        } else if (e.kind === "rocket") {
+          addEnemyBullet(e.x, e.y + 30, base, 5.8, 13, "#ff5a57");
+          addEnemyBullet(e.x - 16, e.y + 12, Math.PI / 2 - .09, 5.0, 9, "#ffd166");
+          addEnemyBullet(e.x + 16, e.y + 12, Math.PI / 2 + .09, 5.0, 9, "#ffd166");
+        } else if (e.kind === "bomberElite") {
+          for (let i = -3; i <= 3; i++) addEnemyBullet(e.x + i * 20, e.y + 42, Math.PI / 2 + i * .07, 3.35, 10, "#ff8d5c");
+          if (strength > .28) {
+            addEnemyBullet(e.x - 54, e.y + 22, base - .08, 4.35, 11, "#c88cff");
+            addEnemyBullet(e.x + 54, e.y + 22, base + .08, 4.35, 11, "#c88cff");
           }
         } else if (e.kind === "shieldElite") {
-          addEnemyBullet(e.x - 24, e.y + 24, Math.PI / 2 - .1, 3.0, 10, "#9cffb0");
-          addEnemyBullet(e.x + 24, e.y + 24, Math.PI / 2 + .1, 3.0, 10, "#9cffb0");
-          if (strength > .55) addEnemyBullet(e.x, e.y + 34, base, 4.0, 11, "#f4f7f7");
+          addEnemyBullet(e.x - 30, e.y + 24, Math.PI / 2 - .12, 3.25, 11, "#9cffb0");
+          addEnemyBullet(e.x + 30, e.y + 24, Math.PI / 2 + .12, 3.25, 11, "#9cffb0");
+          addEnemyBullet(e.x, e.y + 34, base, 4.25, 12, "#f4f7f7");
+          if (strength > .5) {
+            addEnemyBullet(e.x - 46, e.y + 16, Math.PI / 2 - .24, 3.1, 8, "#9cffb0");
+            addEnemyBullet(e.x + 46, e.y + 16, Math.PI / 2 + .24, 3.1, 8, "#9cffb0");
+          }
         } else if (e.kind === "flakElite") {
-          const spokes = strength > .62 ? 6 : 4;
-          for (let i = 0; i < spokes; i++) addEnemyBullet(e.x, e.y + 18, Math.PI / 2 + (i - (spokes - 1) / 2) * .18, 3.35, 8, "#ffd166");
-          addEnemyBullet(e.x, e.y + 26, base, 4.35, 10, "#ff8d5c");
+          const spokes = strength > .5 ? 7 : 5;
+          for (let i = 0; i < spokes; i++) addEnemyBullet(e.x, e.y + 18, Math.PI / 2 + (i - (spokes - 1) / 2) * .15, 3.55, 8, "#ffd166");
+          addEnemyBullet(e.x, e.y + 26, base, 4.55, 11, "#ff8d5c");
         } else if (e.kind === "commandElite") {
-          addEnemyBullet(e.x, e.y + 32, base, 4.1, 12, "#c88cff");
-          addEnemyBullet(e.x - 34, e.y + 22, Math.PI / 2 - .18, 3.45, 9, "#58c7ff");
-          addEnemyBullet(e.x + 34, e.y + 22, Math.PI / 2 + .18, 3.45, 9, "#58c7ff");
+          addEnemyBullet(e.x, e.y + 32, base, 4.35, 13, "#c88cff");
+          addEnemyBullet(e.x - 34, e.y + 22, Math.PI / 2 - .2, 3.65, 9, "#58c7ff");
+          addEnemyBullet(e.x + 34, e.y + 22, Math.PI / 2 + .2, 3.65, 9, "#58c7ff");
+          addEnemyBullet(e.x - 8, e.y + 40, Math.PI / 2 - .06, 4.0, 9, "#ffd166");
+          addEnemyBullet(e.x + 8, e.y + 40, Math.PI / 2 + .06, 4.0, 9, "#ffd166");
           const nearby = game.enemies.filter(o => o !== e && o.kind !== "boss" && Math.abs(o.x - e.x) < 210 && Math.abs(o.y - e.y) < 180);
           nearby.slice(0, 3).forEach(o => {
-            o.fire = Math.min(o.fire, 34 + Math.random() * 16);
+            o.fire = Math.min(o.fire, 22 + Math.random() * 12);
           });
         } else if (e.kind === "dive") {
           addEnemyBullet(e.x, e.y + 26, base, 3.8, 9, "#ff6d6a");
@@ -2584,7 +2624,8 @@
 
       function enemyBulletCap() {
         const stagePressure = Math.min(18, Math.max(0, game.stage - 2) * 4);
-        return Math.round((10 + stagePressure + playerStrength() * (MAX_ENEMY_BULLETS - 10)) * selectedDifficulty.bullet);
+        const elitePressure = game.enemies.some(e => e.elite) ? (IS_MOBILE ? 3 : 6) : 0;
+        return Math.round((10 + elitePressure + stagePressure + playerStrength() * (MAX_ENEMY_BULLETS - 10)) * selectedDifficulty.bullet);
       }
 
       function collide() {
