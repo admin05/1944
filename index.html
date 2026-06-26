@@ -1188,6 +1188,7 @@
           bossDefeated: 0,
           lastBossName: "",
           lastBossStage: "",
+          pendingStage: 0,
           trainingResets: 0,
           supplyDrop: false,
           restTimer: selectedGameMode.id === "training" ? 90 : 160,
@@ -2133,7 +2134,7 @@
         }, 3600);
       }
 
-      function showVictory() {
+      function showVictory(final = true) {
         state = "victory";
         clearReportPause();
         touchControls.classList.remove("show");
@@ -2146,11 +2147,12 @@
         const rankScore = rank === "S" ? 100 : rank === "A" ? 78 : rank === "B" ? 56 : 34;
         const p = game.player;
         const weaponReport = `火力 ${p.power}｜主炮 Lv.${p.mainLevel}｜副武 Lv.${p.secondaryLevel}｜技能 Lv.${p.skillLevel}`;
+        const nextTheme = !final && game.pendingStage ? mapThemes[(game.pendingStage - 1) % mapThemes.length] : null;
         victoryPanel.innerHTML = `
           <div class="victory-top">
-            <div class="victory-ribbon">天穹前线 · 最终战报</div>
-            <div class="victory-title">任务完成</div>
-            <p class="victory-subtitle">全战区首领目标已确认摧毁，飞行中队返航。</p>
+            <div class="victory-ribbon">天穹前线 · ${final ? "最终战报" : "首领击破战报"}</div>
+            <div class="victory-title">${final ? "任务完成" : "首领击破"}</div>
+            <p class="victory-subtitle">${final ? "全战区首领目标已确认摧毁，飞行中队返航。" : `${game.lastBossName || "敌方首领"} 已被击破，下一战区等待出击。`}</p>
           </div>
           <div class="victory-body">
             <div class="victory-score-row">
@@ -2163,20 +2165,49 @@
             <div class="victory-meter"><div class="victory-meter-fill" style="width:${rankScore}%"></div></div>
             <div class="victory-grid">
               <div class="victory-card"><span class="victory-label">击破首领</span><span class="victory-value">${game.bossDefeated} 个</span></div>
-              <div class="victory-card"><span class="victory-label">最终战区</span><span class="victory-value">${game.lastBossStage || currentMapTheme().name}</span></div>
-              <div class="victory-card"><span class="victory-label">最后目标</span><span class="victory-value">${game.lastBossName || "全部目标"}</span></div>
+              <div class="victory-card"><span class="victory-label">${final ? "最终战区" : "当前战区"}</span><span class="victory-value">${game.lastBossStage || currentMapTheme().name}</span></div>
+              <div class="victory-card"><span class="victory-label">${final ? "最后目标" : "击破目标"}</span><span class="victory-value">${game.lastBossName || "全部目标"}</span></div>
               <div class="victory-card"><span class="victory-label">最终座机</span><span class="victory-value">${p.plane.name}</span></div>
             </div>
-            <div class="victory-brief">战术记录：${weaponReport}。剩余生命 ${p.hp}/${p.maxHp}，炸弹 ${p.bombs}，护盾 ${Math.floor(p.shield)}。</div>
-            <button class="main-btn" id="victoryRestart">再次出击</button>
-            <p class="victory-note">战报已归档。提高评分需要更快击破首领、减少受伤并保留更多装备。</p>
+            <div class="victory-brief">战术记录：${weaponReport}。剩余生命 ${p.hp}/${p.maxHp}，炸弹 ${p.bombs}，护盾 ${Math.floor(p.shield)}。${nextTheme ? `下一战区：${nextTheme.name}。` : ""}</div>
+            <button class="main-btn" id="victoryRestart">${final ? "再次出击" : "继续出击"}</button>
+            <p class="victory-note">${final ? "战报已归档。提高评分需要更快击破首领、减少受伤并保留更多装备。" : "战报已归档。确认补给与升级后，继续推进下一战区。"}</p>
           </div>
         `;
         victoryPanel.querySelector("#victoryRestart").addEventListener("click", () => {
-          menu.classList.remove("hidden");
-          victoryPanel.classList.add("hidden");
-          start();
+          if (final) {
+            menu.classList.remove("hidden");
+            victoryPanel.classList.add("hidden");
+            start();
+          } else {
+            continueAfterBossReport();
+          }
         });
+      }
+
+      function continueAfterBossReport() {
+        if (!game || !game.pendingStage) return;
+        game.stage = game.pendingStage;
+        game.pendingStage = 0;
+        game.stageTime = 0;
+        game.bossTimer = 0;
+        game.bossSpawned = false;
+        game.supplyDrop = false;
+        game.restTimer = 160;
+        game.spawnTimer = 150;
+        game.enemyBullets.length = 0;
+        refreshMap();
+        game.player.inv = 210;
+        flash = 35;
+        if (game.stage <= 3) {
+          const type = Math.random() > .5 ? "shield" : "missile";
+          game.powerups.push({ type, x: W / 2, y: 180, vy: 1.5, r: 18, rot: 0, seed: Math.random() * 100 });
+        }
+        state = "play";
+        overlay.classList.add("hidden");
+        victoryPanel.classList.add("hidden");
+        touchControls.classList.toggle("show", selectedInputMode.id === "touch");
+        last = performance.now();
       }
 
       function bossSupportCap() {
@@ -2794,24 +2825,15 @@
             game.enemyBullets.length = 0;
             game.enemies.length = 0;
             game.turrets.length = 0;
-            showVictory();
+            showVictory(true);
             return;
           }
-          game.stage += 1;
-          game.stageTime = 0;
-          game.bossTimer = 0;
-          game.bossSpawned = false;
-          game.supplyDrop = false;
-          game.restTimer = 160;
-          game.spawnTimer = 150;
+          game.pendingStage = game.stage + 1;
           game.enemyBullets.length = 0;
-          refreshMap();
-          game.player.inv = 210;
-          flash = 35;
-          if (game.stage <= 3) {
-            const type = Math.random() > .5 ? "shield" : "missile";
-            game.powerups.push({ type, x: W / 2, y: 180, vy: 1.5, r: 18, rot: 0, seed: Math.random() * 100 });
-          }
+          game.enemies.length = 0;
+          game.turrets.length = 0;
+          showVictory(false);
+          return;
         }
       }
 
