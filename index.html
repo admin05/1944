@@ -1104,6 +1104,8 @@
           supplyDrop: false,
           restTimer: selectedGameMode.id === "training" ? 90 : 160,
           paused: false,
+          reportPause: false,
+          reportPauseUntil: 0,
           player: {
             x: W / 2,
             y: H - 164,
@@ -1360,11 +1362,28 @@
       function loop(now) {
         const dt = Math.min(34, now - last) * .06 * slow;
         last = now;
-        if (state === "play" && !game.paused) update(dt);
+        if (state === "play" && game.reportPause && performance.now() >= game.reportPauseUntil) clearReportPause();
+        if (state === "play" && !game.paused && !game.reportPause) update(dt);
         if (state === "play" && game.paused) updatePauseInput();
         if (state !== "play") updateTrainingDemo(dt);
         draw();
         raf = requestAnimationFrame(loop);
+      }
+
+      function holdReportPause(ms) {
+        if (!game) return;
+        game.reportPause = true;
+        game.reportPauseUntil = Math.max(game.reportPauseUntil || 0, performance.now() + ms);
+      }
+
+      function clearReportPause() {
+        if (!game) return;
+        game.reportPause = false;
+        game.reportPauseUntil = 0;
+      }
+
+      function actionLocked() {
+        return state !== "play" || game?.paused || game?.reportPause;
       }
 
       function updateTrainingDemo(dt) {
@@ -1429,7 +1448,7 @@
           if (gamepad.secondary && !gamepadSecondaryLatch) fireSecondary();
           if (gamepad.skill && !gamepadSkillLatch) usePlaneSkill();
           if (gamepad.bomb && !gamepadBombLatch) useBomb();
-          if (gamepad.pause && !gamepadPauseLatch && game && state === "play") game.paused = !game.paused;
+          if (gamepad.pause && !gamepadPauseLatch && game && state === "play" && !game.reportPause) game.paused = !game.paused;
           gamepadSecondaryLatch = gamepad.secondary;
           gamepadSkillLatch = gamepad.skill;
           gamepadBombLatch = gamepad.bomb;
@@ -1459,7 +1478,7 @@
         p.bomberMode = Math.max(0, p.bomberMode - dt);
         p.bomberFire -= dt;
         p.inv = Math.max(0, p.inv - dt);
-        if (isFirePressed(gamepad) && p.fire <= 0) firePlayer();
+        if (!game.reportPause && isFirePressed(gamepad) && p.fire <= 0) firePlayer();
         if (p.bomberMode > 0) updateBomberMode(p, dt);
         if (selectedInputMode?.id === "touch" && touchSecondaryHeld) fireSecondary();
         if (game.t % 7 < dt && game.trails.length < MAX_TRAILS) game.trails.push({ x: p.x, y: p.y + 28, r: 5, life: 20, c: p.plane.color });
@@ -1565,6 +1584,7 @@
       }
 
       function fireSecondary() {
+        if (actionLocked()) return;
         const p = game.player;
         if (p.secondaryFire > 0) return;
         p.secondaryFire = Math.max(18, 36 - p.secondaryLevel * 4);
@@ -1581,6 +1601,7 @@
       }
 
       function usePlaneSkill() {
+        if (actionLocked()) return;
         const p = game.player;
         if (p.skillCooldown > 0) return;
         p.skillCooldown = Math.max(160, 360 - p.skillLevel * 28 - p.cooldownLevel * 26);
@@ -1992,8 +2013,12 @@
         bossIntroTitle.textContent = `首领来袭：${type.name}`;
         bossIntroBody.textContent = type.intro;
         bossIntro.classList.add("show");
+        holdReportPause(5200);
         window.clearTimeout(showBossIntro.timer);
-        showBossIntro.timer = window.setTimeout(() => bossIntro.classList.remove("show"), 5200);
+        showBossIntro.timer = window.setTimeout(() => {
+          bossIntro.classList.remove("show");
+          if (!bossPaper.classList.contains("show")) clearReportPause();
+        }, 5200);
         showBossPaper(type);
       }
 
@@ -2004,12 +2029,17 @@
         bossPaperLoc.textContent = `地点：${theme.name} ｜ 敌方代号：${type.id === "ace" ? "王牌飞行员" : type.id === "carrier" ? "航空母舰" : type.id === "tank" ? "重装坦克" : "飞行堡垒"}`;
         bossPaperBody.textContent = `前线电报称，${type.name} 已进入战区。${type.intro}`;
         bossPaper.classList.add("show");
+        holdReportPause(3600);
         window.clearTimeout(showBossPaper.timer);
-        showBossPaper.timer = window.setTimeout(() => bossPaper.classList.remove("show"), 3600);
+        showBossPaper.timer = window.setTimeout(() => {
+          bossPaper.classList.remove("show");
+          if (!bossIntro.classList.contains("show")) clearReportPause();
+        }, 3600);
       }
 
       function showVictory() {
         state = "victory";
+        clearReportPause();
         touchControls.classList.remove("show");
         bossIntro.classList.remove("show");
         bossPaper.classList.remove("show");
@@ -2588,8 +2618,12 @@
           bossIntroTitle.textContent = `王牌复活 x${e.aceLives} — ${e.acePlane.name} Lv.${e.aceLevel}`;
           bossIntroBody.textContent = `技能升级：主炮${e.aceMainLevel} 副武${e.aceSecondaryLevel} 技能${e.aceSkillLevel}。不要松懈！`;
           bossIntro.classList.add("show");
+          holdReportPause(4000);
           window.clearTimeout(showBossIntro.timer);
-          showBossIntro.timer = window.setTimeout(() => bossIntro.classList.remove("show"), 4000);
+          showBossIntro.timer = window.setTimeout(() => {
+            bossIntro.classList.remove("show");
+            if (!bossPaper.classList.contains("show")) clearReportPause();
+          }, 4000);
           return;
         }
         game.score += e.score;
@@ -2664,6 +2698,7 @@
             return;
           }
           state = "over";
+          clearReportPause();
           overlay.classList.remove("hidden");
           menu.classList.remove("hidden");
           victoryPanel.classList.add("hidden");
@@ -2708,7 +2743,7 @@
       }
 
       function useBomb() {
-        if (state !== "play" || game.paused) return;
+        if (actionLocked()) return;
         const p = game.player;
         if (p.bombs <= 0) return;
         p.bombs -= 1;
@@ -4041,14 +4076,15 @@
       window.addEventListener("keydown", (e) => {
         keys.add(e.code);
         if (game?.paused && ["Digit1", "Digit2", "Digit3", "Digit4"].includes(e.code)) buyUpgrade(Number(e.code.slice(-1)) - 1);
-        if (!game?.paused && selectedInputMode?.id === "keyboard" && e.code === "KeyK") fireSecondary();
-        if (!game?.paused && selectedInputMode?.id === "keyboard" && e.code === "KeyL") usePlaneSkill();
-        if (!game?.paused && selectedInputMode?.id === "keyboard" && e.code === "Semicolon") useBomb();
-        if (e.code === "KeyP" && game && state === "play") game.paused = !game.paused;
+        if (!actionLocked() && selectedInputMode?.id === "keyboard" && e.code === "KeyK") fireSecondary();
+        if (!actionLocked() && selectedInputMode?.id === "keyboard" && e.code === "KeyL") usePlaneSkill();
+        if (!actionLocked() && selectedInputMode?.id === "keyboard" && e.code === "Semicolon") useBomb();
+        if (e.code === "KeyP" && game && state === "play" && !game.reportPause) game.paused = !game.paused;
         if (["KeyJ", "KeyK", "KeyL", "Semicolon", "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
       });
       window.addEventListener("keyup", (e) => keys.delete(e.code));
       canvas.addEventListener("pointerdown", (e) => {
+        if (game?.reportPause) return;
         if (game?.paused) {
           const pos = pointerPos(e);
           const hitButton = pauseButtons.find(btn => pos.x >= btn.x && pos.x <= btn.x + btn.w && pos.y >= btn.y && pos.y <= btn.y + btn.h);
@@ -4070,6 +4106,7 @@
       touchFire.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (actionLocked()) return;
         touchFireHeld = true;
       });
       touchFire.addEventListener("pointerup", () => touchFireHeld = false);
@@ -4077,6 +4114,7 @@
       touchSecondary.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (actionLocked()) return;
         touchSecondaryHeld = true;
         if (selectedInputMode?.id === "touch") fireSecondary();
       });
@@ -4085,12 +4123,12 @@
       touchSkill.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (selectedInputMode?.id === "touch") usePlaneSkill();
+        if (selectedInputMode?.id === "touch" && !actionLocked()) usePlaneSkill();
       });
       touchBomb.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (selectedInputMode?.id === "touch") useBomb();
+        if (selectedInputMode?.id === "touch" && !actionLocked()) useBomb();
       });
       startBtn.addEventListener("click", start);
       window.addEventListener("resize", resizeCanvasBacking);
