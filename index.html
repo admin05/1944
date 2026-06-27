@@ -1026,7 +1026,7 @@
         { id: "atlas", name: "巨神", skillName: "重磅俯冲", skillDesc: "投下重型航弹，对 Boss、本体炮台和地面炮塔造成范围伤害。", color: "#ffd166", wing: "#fff1b3", hp: 5, speed: 5.7, shot: 7.2, spread: 0, bomb: "buster" },
         { id: "comet", name: "彗星", skillName: "时缓航迹", skillDesc: "短暂减缓战场节奏并获得无敌窗口，适合穿越密集弹幕。", color: "#49db9a", wing: "#d8ffe9", hp: 3, speed: 8.8, shot: 7.6, spread: 3, bomb: "laser" },
         { id: "vulcan", name: "火神", skillName: "旋转弹幕", skillDesc: "向四周释放旋转火神弹幕，适合被包围或贴近 Boss 时反击。", color: "#c88cff", wing: "#f0ddff", hp: 4, speed: 6.9, shot: 10.5, spread: 2, bomb: "cluster" },
-        { id: "mustang", name: "野马", skillName: "护航编队", skillDesc: "呼叫临时僚机并补充护盾，适合长期战和首领压迫战。", color: "#f4f7f7", wing: "#9cc8d6", hp: 3, speed: 7.4, shot: 8.8, spread: 1, bomb: "sweep" }
+        { id: "mustang", name: "野马", skillName: "护航编队", skillDesc: "维持有限护航并补充少量护盾，适合稳住阵线，但不能无限堆叠。", color: "#f4f7f7", wing: "#9cc8d6", hp: 3, speed: 7.4, shot: 8.8, spread: 1, bomb: "sweep" }
       ];
 
       const powerDefs = {
@@ -1739,8 +1739,9 @@
             game.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, r: 6, dmg: 26 + p.skillLevel * 4, damageType: DAMAGE_MAGIC, type: "shot", color: "#c88cff" });
           }
         } else if (p.plane.id === "mustang") {
-          p.wingman = Math.min(8, p.wingman + 1 + p.skillLevel);
-          p.shield = Math.min(5, p.shield + 1 + p.skillLevel * .35);
+          const escortLevel = 1 + Math.floor(p.skillLevel / 3);
+          p.wingman = Math.min(3, Math.max(p.wingman, escortLevel));
+          p.shield = Math.min(3, p.shield + .55 + p.skillLevel * .12);
         }
       }
 
