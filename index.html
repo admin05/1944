@@ -146,7 +146,7 @@
 
     .hud-bottom {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: minmax(120px, 1fr) minmax(180px, 560px) auto;
       align-items: end;
       gap: 8px;
       text-shadow: 0 2px 0 #000;
@@ -158,6 +158,23 @@
       gap: 5px;
       flex-wrap: wrap;
       max-width: 218px;
+    }
+
+    .training-hint {
+      align-self: end;
+      max-width: min(58vw, 560px);
+      padding: 6px 8px;
+      border: 1px solid rgba(255, 255, 255, .24);
+      background: rgba(7, 12, 14, .64);
+      color: #f4f7f7;
+      font-size: 11px;
+      line-height: 1.35;
+      text-shadow: 0 2px 0 #000;
+      box-shadow: inset 0 0 12px rgba(255,255,255,.05);
+    }
+
+    .training-hint.hidden {
+      display: none;
     }
 
     .chip {
@@ -765,6 +782,16 @@
       h1 {
         font-size: 28px;
       }
+
+      .hud-bottom {
+        grid-template-columns: 1fr auto;
+      }
+
+      .training-hint {
+        grid-column: 1 / -1;
+        max-width: none;
+        font-size: 10px;
+      }
     }
 
     @media (max-width: 860px) and (orientation: portrait) {
@@ -922,6 +949,7 @@
         </div>
         <div class="hud-bottom">
           <div class="weapon-strip" id="weaponStrip"></div>
+          <div class="training-hint hidden" id="trainingHint"></div>
           <div class="stat">
             <span class="label">生命 / 炸弹 / 魔法</span>
             <span class="value" id="life">3 / 3</span>
@@ -1003,6 +1031,7 @@
       const bossBarEl = document.querySelector("#bossBar");
       const lifeEl = document.querySelector("#life");
       const stripEl = document.querySelector("#weaponStrip");
+      const trainingHintEl = document.querySelector("#trainingHint");
       const overlay = document.querySelector("#overlay");
       const menu = overlay.querySelector(".menu");
       const planeSelect = document.querySelector("#planeSelect");
@@ -1050,6 +1079,32 @@
       const DAMAGE_PHYSICAL = "physical";
       const DAMAGE_MAGIC = "magic";
       const DAMAGE_PURE = "pure";
+      const TRAINING_TARGETS = [
+        {
+          id: "armor",
+          name: "装甲靶",
+          label: "物理抗性高",
+          hint: "主炮/副武打它会被装甲抵消，技能魔法更有效。",
+          x: .34,
+          y: .25,
+          color: "#6aa36e",
+          wing: "#d8ffe0",
+          physicalResist: .58,
+          magicResist: .08
+        },
+        {
+          id: "ward",
+          name: "符文靶",
+          label: "魔法抗性高",
+          hint: "技能魔法打它会衰减，主炮/副武的物理伤害更稳定。",
+          x: .66,
+          y: .25,
+          color: "#9b7fd6",
+          wing: "#f0ddff",
+          physicalResist: .08,
+          magicResist: .58
+        }
+      ];
       const BASE_ACTIVE_MINIONS = 8;
       const FIRST_BOSS_SUPPORT_MINIONS = 3;
       const LATER_BOSS_SUPPORT_MINIONS = 11;
@@ -1080,7 +1135,7 @@
       ];
       const gameModes = [
         { id: "campaign", name: "战役模式", desc: "推进关卡并迎战首领。" },
-        { id: "training", name: "训练模式", desc: "持续练习移动、火力、技能、炸弹和暂停升级。" }
+        { id: "training", name: "训练模式", desc: "持续练习移动、火力、魔法恢复、技能耗蓝、抗性靶、炸弹和暂停升级。" }
       ];
 
       let selectedPlane = planeTypes[0];
@@ -1200,6 +1255,7 @@
           lastBossStage: "",
           pendingStage: 0,
           trainingResets: 0,
+          trainingTargetTimer: 0,
           supplyDrop: false,
           restTimer: selectedGameMode.id === "training" ? 90 : 160,
           paused: false,
@@ -1491,7 +1547,7 @@
       function updateTrainingDemo(dt) {
         trainingTime += dt;
         if (!selectedInputMode || !trainingText) return;
-        const step = Math.floor((trainingTime / 180) % 5);
+        const step = Math.floor((trainingTime / 180) % 6);
         const steps = trainingSteps();
         trainingText.textContent = steps[step];
       }
@@ -1501,8 +1557,9 @@
           return [
             "新兵第一项：左摇杆或方向键控制航线，保持飞机在蓝色航迹内。",
             "新兵第二项：A 主炮，X 副武器，Y 专属技能，先点射训练靶。",
-            "新兵第三项：按 B 投弹，清除地面炮塔阵地。",
-            "新兵第四项：看到红色弹道时，用小幅移动穿过空隙。",
+            "新兵第三项：技能会消耗魔法；魔法会缓慢恢复，HUD 的“生命 / 炸弹 / 魔法”第三个数字就是当前魔法。",
+            "新兵第四项：绿色装甲靶物理抗性高，紫色符文靶魔法抗性高；用主炮/副武和技能分别试打。",
+            "新兵第五项：按 B 投弹，炸弹是真实伤害，可绕过物理/魔法抗性并清弹。",
             `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”，类型：${selectedPlane.skillType}。${selectedPlane.skillDesc}`
           ];
         }
@@ -1510,16 +1567,18 @@
           return [
             "新兵第一项：左手拖动飞机移动，别让手指遮住机头。",
             "新兵第二项：按住“主炮”，再点“副武”和“技能”，持续压制训练靶。",
-            "新兵第三项：点击“炸弹”按钮，清除地面炮塔阵地。",
-            "新兵第四项：拖动时保持节奏，躲开红色地对空炮弹。",
+            "新兵第三项：技能会消耗魔法；魔法会缓慢恢复，HUD 的“生命 / 炸弹 / 魔法”第三个数字就是当前魔法。",
+            "新兵第四项：绿色装甲靶物理抗性高，紫色符文靶魔法抗性高；用主炮/副武和技能分别试打。",
+            "新兵第五项：点击“炸弹”按钮，炸弹是真实伤害，可绕过物理/魔法抗性并清弹。",
             `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”，类型：${selectedPlane.skillType}。${selectedPlane.skillDesc}`
           ];
         }
         return [
           "新兵第一项：WASD 或方向键移动，沿蓝色航迹完成机动。",
           "新兵第二项：J 主炮、K 副武、L 技能，右手按键集中完成攻击。",
-          "新兵第三项：按分号键投弹，清除地面炮塔阵地。",
-          "新兵第四项：看到红色弹道时，用小幅移动穿过空隙。",
+          "新兵第三项：技能会消耗魔法；魔法会缓慢恢复，HUD 的“生命 / 炸弹 / 魔法”第三个数字就是当前魔法。",
+          "新兵第四项：绿色装甲靶物理抗性高，紫色符文靶魔法抗性高；用主炮/副武和技能分别试打。",
+          "新兵第五项：按分号键投弹，炸弹是真实伤害，可绕过物理/魔法抗性并清弹。",
           `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”，类型：${selectedPlane.skillType}。${selectedPlane.skillDesc}`
         ];
       }
@@ -1803,6 +1862,8 @@
       }
 
       function updateTrainingMode(dt, danger, minions) {
+        ensureTrainingTargets(dt);
+        minions = game.enemies.filter(e => e.kind !== "boss" && !e.trainingTarget).length;
         const trainingDanger = Math.min(2.15, danger);
         const trainingCap = Math.min(activeMinionCap() + 2, 9 + Math.floor(playerStrength() * 2));
         if (game.spawnTimer <= 0 && game.restTimer <= 0 && minions < trainingCap) {
@@ -1824,6 +1885,38 @@
             Math.random() > .55 ? "flak" : "cannon"
           ));
         }
+      }
+
+      function ensureTrainingTargets(dt) {
+        game.trainingTargetTimer -= dt;
+        if (game.trainingTargetTimer > 0) return;
+        game.trainingTargetTimer = 85;
+        TRAINING_TARGETS.forEach(spec => {
+          if (game.enemies.some(e => e.trainingTarget && e.trainingId === spec.id)) return;
+          game.enemies.push({
+            kind: "trainingTarget",
+            trainingTarget: true,
+            trainingId: spec.id,
+            trainingName: spec.name,
+            trainingLabel: spec.label,
+            trainingHint: spec.hint,
+            physicalResist: spec.physicalResist,
+            magicResist: spec.magicResist,
+            x: W * spec.x,
+            y: H * spec.y,
+            vx: 0,
+            vy: 0,
+            r: 46,
+            hp: 360,
+            maxHp: 360,
+            fire: 9999,
+            score: 180,
+            color: spec.color,
+            wing: spec.wing,
+            phase: Math.random() * 10,
+            entered: true
+          });
+        });
       }
 
       function spawnWave(dt) {
@@ -2397,6 +2490,13 @@
         e.phase += dt;
         e.control = Math.max(0, (e.control || 0) - dt);
         const controlSlow = e.control > 0 ? .45 : 1;
+        if (e.trainingTarget) {
+          const spec = TRAINING_TARGETS.find(target => target.id === e.trainingId);
+          e.x = W * (spec?.x || .5) + Math.sin((game.t + e.phase) * .018) * 16;
+          e.y = H * (spec?.y || .25) + Math.sin((game.t + e.phase) * .026) * 10;
+          e.fire = 9999;
+          return;
+        }
         if (e.kind === "boss") {
           if (e.ace) {
             const ap = e.acePlane || planeTypes[0];
@@ -2721,6 +2821,9 @@
 
       function resistanceOf(target, damageType) {
         if (damageType === DAMAGE_PURE) return 0;
+        if (target.trainingTarget) {
+          return damageType === DAMAGE_PHYSICAL ? target.physicalResist || 0 : target.magicResist || 0;
+        }
         if (target.kind !== "boss" && !target.elite) return 0;
         const stageResist = Math.min(.12, Math.max(0, game.stage - 1) * .015);
         if (target.kind === "boss") {
@@ -2863,6 +2966,14 @@
       }
 
       function killEnemy(e) {
+        if (e.trainingTarget) {
+          game.score += e.score;
+          sfx("boom");
+          explode(e.x, e.y, e.color, 12, .75);
+          shake = Math.max(shake, 5);
+          game.trainingTargetTimer = 38;
+          return;
+        }
         if (e.kind === "boss" && e.ace && e.aceLives > 1) {
           e.aceLives -= 1;
           e.aceLevel += 1;
@@ -3596,6 +3707,10 @@
           drawBoss(e);
           return;
         }
+        if (e.trainingTarget) {
+          drawTrainingTarget(e);
+          return;
+        }
         const angle = Math.PI / 2 + Math.sin(e.phase * .045) * .18;
         if (e.kind === "train") {
           drawTrain(e);
@@ -3737,6 +3852,35 @@
         ctx.fill();
         ctx.restore();
         drawHealthArc(e);
+      }
+
+      function drawTrainingTarget(e) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        const pulse = Math.sin(game.t * .08 + e.phase) * 4;
+        ctx.fillStyle = "rgba(0,0,0,.32)";
+        ctx.beginPath();
+        ctx.ellipse(0, e.r * .76, e.r * 1.08, e.r * .28, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = e.trainingId === "armor" ? "rgba(156,255,176,.86)" : "rgba(200,140,255,.86)";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, e.r + 10 + pulse, 0, Math.PI * 2);
+        ctx.stroke();
+        drawAircraft(0, 0, e.r, e.color, e.wing || "#f4f7f7", Math.PI / 2, false, false);
+        ctx.fillStyle = "rgba(7,12,14,.82)";
+        roundRect(-72, -e.r - 46, 144, 34, 6);
+        ctx.fill();
+        ctx.fillStyle = "#f4f7f7";
+        ctx.font = "900 17px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText(e.trainingName, 0, -e.r - 24);
+        ctx.fillStyle = e.trainingId === "armor" ? "#9cffb0" : "#c88cff";
+        ctx.font = "800 13px Trebuchet MS";
+        ctx.fillText(e.trainingLabel, 0, e.r + 30);
+        ctx.fillStyle = "#ff5a57";
+        ctx.fillRect(-e.r, e.r + 42, e.r * 2 * Math.max(0, e.hp / e.maxHp), 6);
+        ctx.restore();
       }
 
       function drawBoss(e) {
@@ -4165,6 +4309,56 @@
         }
 
         if (step >= 2) {
+          const mana = 42 + (Math.sin(t * .05) + 1) * 24;
+          ctx.save();
+          ctx.fillStyle = "rgba(7,12,14,.72)";
+          roundRect(W * .34, H * .39, W * .32, 74, 8);
+          ctx.fill();
+          ctx.fillStyle = "#58c7ff";
+          ctx.fillRect(W * .38, H * .43, W * .24 * (mana / 100), 10);
+          ctx.strokeStyle = "rgba(238,248,255,.55)";
+          ctx.strokeRect(W * .38, H * .43, W * .24, 10);
+          ctx.fillStyle = "#f4f7f7";
+          ctx.font = "800 19px Trebuchet MS";
+          ctx.textAlign = "center";
+          ctx.fillText("魔法会缓慢恢复，技能释放会耗蓝", W * .5, H * .43 + 38);
+          ctx.restore();
+        }
+
+        if (step >= 3) {
+          const armor = {
+            trainingTarget: true,
+            trainingId: "armor",
+            trainingName: "装甲靶",
+            trainingLabel: "物理抗性高",
+            x: W * .34,
+            y: H * .32,
+            r: 44,
+            hp: 260,
+            maxHp: 360,
+            color: "#6aa36e",
+            wing: "#d8ffe0",
+            phase: t * .25
+          };
+          const ward = {
+            trainingTarget: true,
+            trainingId: "ward",
+            trainingName: "符文靶",
+            trainingLabel: "魔法抗性高",
+            x: W * .66,
+            y: H * .32,
+            r: 44,
+            hp: 260,
+            maxHp: 360,
+            color: "#9b7fd6",
+            wing: "#f0ddff",
+            phase: t * .25 + 8
+          };
+          drawTrainingTarget(armor);
+          drawTrainingTarget(ward);
+        }
+
+        if (step >= 4) {
           const demoTurrets = [
             { x: W * .32, y: H * .47, r: 34, hp: 48, maxHp: 70, rot: -Math.PI / 2, type: "cannon" },
             { x: W * .68, y: H * .47, r: 34, hp: 24, maxHp: 70, rot: -Math.PI / 2, type: "cannon" }
@@ -4178,24 +4372,12 @@
           ctx.stroke();
         }
 
-        if (step >= 3) {
+        if (step >= 5) {
           for (let i = 0; i < 9; i++) {
             const x = W * .24 + i * W * .065;
             const y = H * .24 + ((t * 5 + i * 44) % 420);
             drawEnemyBullet({ x, y, r: 10, color: i % 2 ? "#ff5a57" : "#ffd166" });
           }
-        }
-
-        if (step >= 4) {
-          const boss = {
-            x: W * .5,
-            y: H * .18,
-            r: 300,
-            bossType: "fortress",
-            parts: makeBossParts("fortress", 300)
-          };
-          drawFortressBoss(boss);
-          drawBossParts(boss);
         }
 
         ctx.save();
@@ -4204,7 +4386,7 @@
         ctx.fillStyle = "#ffd166";
         ctx.font = "900 28px Trebuchet MS";
         ctx.textAlign = "center";
-        ctx.fillText(`新兵训练 ${step + 1} / 5`, W * .5, H * .05 + 35);
+        ctx.fillText(`新兵训练 ${step + 1} / 6`, W * .5, H * .05 + 35);
         ctx.restore();
       }
 
@@ -4303,6 +4485,14 @@
         if (hudCache.chips !== chipText) {
           stripEl.innerHTML = chips.map(([name, on]) => `<span class="chip ${on ? "on" : ""}">${name}</span>`).join("");
           hudCache.chips = chipText;
+        }
+        const trainingHint = game.mode === "training"
+          ? `训练提示：魔法每秒恢复，技能会消耗 ${skillManaCost(p)} 点魔法。绿色装甲靶=物理抗性高，紫色符文靶=魔法抗性高；主炮/副武偏物理，专属技能偏魔法，炸弹无视抗性。`
+          : "";
+        if (hudCache.trainingHint !== trainingHint) {
+          trainingHintEl.textContent = trainingHint;
+          trainingHintEl.classList.toggle("hidden", !trainingHint);
+          hudCache.trainingHint = trainingHint;
         }
       }
 
