@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>天穹前线 1944</title>
+  <title>钢翼风暴 1944</title>
   <style>
     :root {
       color-scheme: dark;
@@ -929,7 +929,7 @@
       </section>
     </aside>
 
-    <section class="cabinet" aria-label="天穹前线 1944 竖版街机射击">
+    <section class="cabinet" aria-label="钢翼风暴 1944 竖版街机射击">
       <canvas id="game" width="1920" height="1280"></canvas>
       <div class="hud">
         <div class="hud-top">
@@ -959,7 +959,7 @@
 
       <div class="overlay" id="overlay">
         <div class="menu">
-          <h1>天穹前线 1944</h1>
+          <h1>钢翼风暴 1944</h1>
           <p class="subtitle">竖版街机空战</p>
           <div class="select-grid" id="planeSelect"></div>
           <div class="mode-grid" id="modeSelect"></div>
@@ -990,7 +990,7 @@
           <div class="boss-paper-head">
             <div>
               <div class="boss-paper-title">战地快报</div>
-              <div class="boss-paper-sub" id="bossPaperSub">天穹前线特别号外</div>
+              <div class="boss-paper-sub" id="bossPaperSub">钢翼风暴特别号外</div>
             </div>
             <div class="boss-paper-stamp">紧急</div>
           </div>
@@ -1126,7 +1126,23 @@
         { id: "berlin", name: "柏林", sky: ["#363637", "#5a5048", "#2c2c2f"], terrain: ["ruin", "road", "base"], cloud: "#d8d4cc" },
         { id: "moscow", name: "莫斯科", sky: ["#566a72", "#c7d6d8", "#6c7a80"], terrain: ["snow", "road", "base"], cloud: "#ffffff" },
         { id: "stalingrad", name: "斯大林格勒", sky: ["#332f2d", "#6a5143", "#2b2928"], terrain: ["trench", "ruin", "fire"], cloud: "#d6c7b7" },
-        { id: "britain", name: "大不列颠", sky: ["#69849e", "#b3cbd6", "#5685a0"], terrain: ["farm", "road", "base"], cloud: "#f2f8ff" }
+        { id: "britain", name: "大不列颠", sky: ["#69849e", "#b3cbd6", "#5685a0"], terrain: ["farm", "road", "base"], cloud: "#f2f8ff" },
+        { id: "normandy", name: "诺曼底", sky: ["#405767", "#8ea3aa", "#3d5946"], terrain: ["bunker", "road", "island"], cloud: "#eef4f2" },
+        { id: "midway", name: "中途岛", sky: ["#164967", "#2f9abc", "#2f6a74"], terrain: ["harbor", "ship", "island"], cloud: "#e8fbff" },
+        { id: "iwojima", name: "硫磺岛", sky: ["#463b35", "#8c6a52", "#2f2a29"], terrain: ["island", "bunker", "fire"], cloud: "#dcc8b6" },
+        { id: "rhine", name: "莱茵河", sky: ["#475d5d", "#8aa19a", "#354643"], terrain: ["road", "forest", "base"], cloud: "#e2ece8" }
+      ];
+      const bossCatalog = [
+        { type: "fortress", name: "B-17飞行堡垒", hp: 5400, r: 450, y: -500, vy: 1.08, color: "#8d3939", score: 7800, intro: "阿登森林上空的老牌重型轰炸机改装要塞，侧翼炮塔和腹部炮台会交替压制航线。先清空周边小队，再拆它的装甲机身。" },
+        { type: "carrier", name: "福特号航空母舰", hp: 7200, r: 505, y: -620, vy: .92, color: "#526a73", score: 9400, intro: "珍珠港海域的巨型航母，甲板炮、舰载机和舰桥火力会一起封锁中路。先压制甲板支援，再打舰桥核心。" },
+        { type: "fortress", name: "B-29飞行堡垒", hp: 6100, r: 470, y: -530, vy: 1.12, color: "#93616a", score: 8600, intro: "柏林上空的远程重轰炸机要塞，火力比前一架更密，机腹炮台也更难躲。要抓它横移后的短暂空档反击。" },
+        { type: "tank", name: "虎式", hp: 5600, r: 430, y: -470, vy: 1.28, color: "#667052", score: 7400, intro: "莫斯科前线的重装突击坦克，正面装甲厚，双联主炮会持续逼退你。绕开正面炮口，从两侧切入。" },
+        { type: "tank", name: "豹式", hp: 5900, r: 440, y: -470, vy: 1.22, color: "#6d785d", score: 7800, intro: "斯大林格勒战线的机动型坦克，转向更快，炮台压制也更凶。别停在正前方，边躲边拆它的装甲模块。" },
+        { type: "ace", name: "敌方王牌飞行员", hp: 2800, r: 36, y: -80, vy: 2.6, color: "#58c7ff", score: 12000, intro: "大不列颠上空的敌方王牌会从六架飞机中随机选一架出击，并使用和玩家一样的技能系统。他有4条命，每次复活都会升级。" },
+        { type: "tank", name: "古斯塔夫列车炮", hp: 7600, r: 470, y: -500, vy: 1.12, color: "#5f6659", score: 11200, intro: "诺曼底内陆的超重型列车炮正在沿铁路推进，装甲炮塔会用低速重弹逼退航线。优先击毁两侧副炮，再贴近核心火炮。" },
+        { type: "carrier", name: "大和号海上堡垒", hp: 8200, r: 530, y: -650, vy: .86, color: "#596a6f", score: 12800, intro: "中途岛海域出现的巨型海上堡垒，舰艏、舰桥和甲板火力会轮流封锁半张地图。保持横向移动，别被舰载炮阵压在角落。" },
+        { type: "fortress", name: "银翼要塞 Ki-91", hp: 7000, r: 490, y: -560, vy: 1.16, color: "#7c5148", score: 11600, intro: "硫磺岛火山云层中钻出的高空重轰，腹部炮台和翼尖炮会组成交叉火线。先拆外侧炮台，再从中线穿透机身。" },
+        { type: "tank", name: "莱茵铁幕巨炮", hp: 8400, r: 485, y: -520, vy: 1.18, color: "#59685e", score: 13500, intro: "莱茵河防线的最终重装炮台，主炮会不断逼退玩家，履带炮会封住退路。需要用炸弹和技能撕开装甲窗口。" }
       ];
       const inputModes = [
         { id: "keyboard", name: "键盘鼠标", training: "键盘鼠标登记：WASD / 方向键移动，J 主炮，K 副武器，L 专属技能，分号键投弹，P 暂停。" },
@@ -1502,7 +1518,7 @@
         ensureAudio();
         menu.classList.remove("hidden");
         victoryPanel.classList.add("hidden");
-        overlay.querySelector("h1").textContent = "天穹前线 1944";
+        overlay.querySelector("h1").textContent = "钢翼风暴 1944";
         overlay.querySelector(".subtitle").textContent = selectedGameMode.id === "training" ? "新兵训练空域" : "竖版街机空战";
         startBtn.textContent = selectedGameMode.id === "training" ? "开始训练" : "开始出击";
         bossIntro.classList.remove("show");
@@ -2153,26 +2169,15 @@
       }
 
       function spawnBoss() {
-        const stage = ((game.stage - 1) % mapThemes.length) + 1;
-        const type = (() => {
-          if (stage === 1) {
-            return { id: "fortress", name: "B-17飞行堡垒", hp: 5400, r: 450, y: -500, vy: 1.08, color: "#8d3939", score: 7800, intro: "阿登森林上空的老牌重型轰炸机改装要塞，侧翼炮塔和腹部炮台会交替压制航线。先清空周边小队，再拆它的装甲机身。" };
-          }
-          if (stage === 2) {
-            return { id: "carrier", name: "福特号航空母舰", hp: 7200, r: 505, y: -620, vy: .92, color: "#526a73", score: 9400, intro: "珍珠港海域的巨型航母，甲板炮、舰载机和舰桥火力会一起封锁中路。先压制甲板支援，再打舰桥核心。" };
-          }
-          if (stage === 3) {
-            return { id: "fortress", name: "B-29飞行堡垒", hp: 6100, r: 470, y: -530, vy: 1.12, color: "#93616a", score: 8600, intro: "柏林上空的远程重轰炸机要塞，火力比前一架更密，机腹炮台也更难躲。要抓它横移后的短暂空档反击。" };
-          }
-          if (stage === 4) {
-            return { id: "tank", name: "虎式", hp: 5600, r: 430, y: -470, vy: 1.28, color: "#667052", score: 7400, intro: "莫斯科前线的重装突击坦克，正面装甲厚，双联主炮会持续逼退你。绕开正面炮口，从两侧切入。" };
-          }
-          if (stage === 5) {
-            return { id: "tank", name: "豹式", hp: 5900, r: 440, y: -470, vy: 1.22, color: "#6d785d", score: 7800, intro: "斯大林格勒战线的机动型坦克，转向更快，炮台压制也更凶。别停在正前方，边躲边拆它的装甲模块。" };
-          }
+        const baseType = bossCatalog[(game.stage - 1) % bossCatalog.length];
+        const type = { ...baseType, id: baseType.type };
+        if (type.id === "ace") {
           const acePick = planeTypes[Math.floor(Math.random() * planeTypes.length)];
-          return { id: "ace", name: `王牌·${acePick.name}`, hp: 2800, r: 36, y: -80, vy: 2.6, color: acePick.color, score: 12000, intro: `大不列颠上空，敌方王牌飞行员驾驶“${acePick.name}”拦截。他能使用${acePick.skillType}“${acePick.skillName}”和全套技能系统——有4条命，每次复活都会升级。` };
-        })();
+          type.name = `王牌·${acePick.name}`;
+          type.color = acePick.color;
+          type.acePlane = acePick;
+          type.intro = `大不列颠上空，敌方王牌飞行员驾驶“${acePick.name}”拦截。他能使用${acePick.skillType}“${acePick.skillName}”和全套技能系统——有4条命，每次复活都会升级。`;
+        }
         game.bossSpawned = true;
         game.supplyDrop = false;
         game.restTimer = 80;
@@ -2197,7 +2202,7 @@
           score: type.score,
           color: type.color,
           ace: type.id === "ace",
-          acePlane: type.id === "ace" ? planeTypes[Math.floor(Math.random() * planeTypes.length)] : null,
+          acePlane: type.id === "ace" ? type.acePlane : null,
           aceLives: type.id === "ace" ? 4 : 0,
           aceLevel: type.id === "ace" ? 1 : 0,
           aceMainLevel: type.id === "ace" ? 1 : 0,
@@ -2292,7 +2297,7 @@
         const nextTheme = !final && game.pendingStage ? mapThemes[(game.pendingStage - 1) % mapThemes.length] : null;
         victoryPanel.innerHTML = `
           <div class="victory-top">
-            <div class="victory-ribbon">天穹前线 · ${final ? "最终战报" : "首领击破战报"}</div>
+            <div class="victory-ribbon">钢翼风暴 · ${final ? "最终战报" : "首领击破战报"}</div>
             <div class="victory-title">${final ? "任务完成" : "首领击破"}</div>
             <p class="victory-subtitle">${final ? "全战区首领目标已确认摧毁，飞行中队返航。" : `${game.lastBossName || "敌方首领"} 已被击破，下一战区等待出击。`}</p>
           </div>
@@ -3496,6 +3501,83 @@
             ctx.beginPath();
             ctx.ellipse(W * .5, y + 118, 210, 48, .08, 0, Math.PI * 2);
             ctx.fill();
+          } else if (theme.id === "normandy") {
+            ctx.fillStyle = "rgba(205,190,135,.22)";
+            ctx.beginPath();
+            ctx.ellipse(W * .52, y + 118, 310, 52, -.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(65,75,72,.28)";
+            ctx.lineWidth = 8;
+            for (let i = 0; i < 3; i++) {
+              ctx.beginPath();
+              ctx.moveTo(120 + i * 235, y + 24);
+              ctx.lineTo(84 + i * 250, y + 218);
+              ctx.stroke();
+            }
+            ctx.fillStyle = "rgba(55,64,62,.48)";
+            roundRect(W * .18, y + 74, 92, 48, 4);
+            roundRect(W * .68, y + 166, 110, 52, 4);
+            ctx.fill();
+          } else if (theme.id === "midway") {
+            ctx.strokeStyle = "rgba(225,248,255,.18)";
+            ctx.lineWidth = 5;
+            for (let i = 0; i < 5; i++) {
+              ctx.beginPath();
+              ctx.arc(120 + i * 140, y + 130 + (i % 2) * 36, 58, .2, Math.PI * 1.55);
+              ctx.stroke();
+            }
+            ctx.fillStyle = "rgba(80,95,98,.48)";
+            roundRect(W * .12, y + 72, 155, 30, 5);
+            roundRect(W * .56, y + 186, 185, 32, 5);
+            ctx.fill();
+            ctx.fillStyle = "rgba(218,198,122,.2)";
+            ctx.beginPath();
+            ctx.ellipse(W * .42, y + 118, 135, 25, .16, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (theme.id === "iwojima") {
+            ctx.fillStyle = "rgba(36,31,29,.36)";
+            ctx.beginPath();
+            ctx.moveTo(W * .18, y + 220);
+            ctx.lineTo(W * .42, y + 34);
+            ctx.lineTo(W * .66, y + 222);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "rgba(255,105,55,.2)";
+            ctx.beginPath();
+            ctx.ellipse(W * .42, y + 66, 62, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(90,70,60,.26)";
+            ctx.lineWidth = 7;
+            for (let i = 0; i < 4; i++) {
+              ctx.beginPath();
+              ctx.moveTo(60 + i * 180, y + 20);
+              ctx.bezierCurveTo(115 + i * 160, y + 86, 82 + i * 190, y + 158, 150 + i * 170, y + 232);
+              ctx.stroke();
+            }
+          } else if (theme.id === "rhine") {
+            ctx.fillStyle = "rgba(70,112,118,.24)";
+            ctx.beginPath();
+            ctx.moveTo(W * .33, y - 30);
+            ctx.bezierCurveTo(W * .45, y + 52, W * .3, y + 144, W * .52, y + 292);
+            ctx.lineTo(W * .67, y + 292);
+            ctx.bezierCurveTo(W * .48, y + 150, W * .64, y + 52, W * .47, y - 30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(210,225,210,.18)";
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(W * .38, y - 10);
+            ctx.bezierCurveTo(W * .52, y + 80, W * .42, y + 170, W * .59, y + 270);
+            ctx.stroke();
+            ctx.fillStyle = "rgba(45,62,52,.42)";
+            for (let i = 0; i < 5; i++) {
+              ctx.beginPath();
+              ctx.moveTo(72 + i * 158, y + 70 + (i % 2) * 82);
+              ctx.lineTo(54 + i * 158, y + 118 + (i % 2) * 82);
+              ctx.lineTo(92 + i * 158, y + 118 + (i % 2) * 82);
+              ctx.closePath();
+              ctx.fill();
+            }
           } else {
             ctx.strokeStyle = "rgba(95,80,55,.22)";
             ctx.lineWidth = 8;
