@@ -292,6 +292,13 @@
       white-space: nowrap;
     }
 
+    .plane-type {
+      font-size: 9px;
+      line-height: 1;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
     .difficulty-btn {
       min-height: 38px;
       padding: 6px 4px;
@@ -1021,12 +1028,12 @@
       const victoryPanel = document.querySelector("#victoryPanel");
 
       const planeTypes = [
-        { id: "falcon", name: "隼式", skillName: "穿甲长矛", skillDesc: "发射一束高伤害贯穿光矛，适合拆 Boss 装甲炮台。", color: "#6bd6ff", wing: "#dcefff", hp: 3, speed: 7.8, shot: 8.2, spread: 1, bomb: "napalm" },
-        { id: "raiden", name: "雷电", skillName: "雷暴扇面", skillDesc: "向前方展开密集扇形雷暴弹幕，适合清理大群小兵。", color: "#ff5a57", wing: "#ffd1c4", hp: 4, speed: 6.5, shot: 9.8, spread: 2, bomb: "shock" },
-        { id: "atlas", name: "巨神", skillName: "重磅俯冲", skillDesc: "投下重型航弹，对 Boss、本体炮台和地面炮塔造成范围伤害。", color: "#ffd166", wing: "#fff1b3", hp: 5, speed: 5.7, shot: 7.2, spread: 0, bomb: "buster" },
-        { id: "comet", name: "彗星", skillName: "时缓航迹", skillDesc: "短暂减缓战场节奏并获得无敌窗口，适合穿越密集弹幕。", color: "#49db9a", wing: "#d8ffe9", hp: 3, speed: 8.8, shot: 7.6, spread: 3, bomb: "laser" },
-        { id: "vulcan", name: "火神", skillName: "旋转弹幕", skillDesc: "向四周释放旋转火神弹幕，适合被包围或贴近 Boss 时反击。", color: "#c88cff", wing: "#f0ddff", hp: 4, speed: 6.9, shot: 10.5, spread: 2, bomb: "cluster" },
-        { id: "mustang", name: "野马", skillName: "护航编队", skillDesc: "维持有限护航并补充少量护盾，适合稳住阵线，但不能无限堆叠。", color: "#f4f7f7", wing: "#9cc8d6", hp: 3, speed: 7.4, shot: 8.8, spread: 1, bomb: "sweep" }
+        { id: "falcon", name: "隼式", skillName: "穿甲长矛", skillType: "控制类", skillDesc: "发射一束高伤害贯穿光矛，适合拆 Boss 装甲炮台并压制航线。", color: "#6bd6ff", wing: "#dcefff", hp: 3, speed: 7.8, shot: 8.2, spread: 1, bomb: "napalm" },
+        { id: "raiden", name: "雷电", skillName: "雷暴扇面", skillType: "群伤类", skillDesc: "向前方展开密集扇形雷暴弹幕，适合清理大群小兵。", color: "#ff5a57", wing: "#ffd1c4", hp: 4, speed: 6.5, shot: 9.8, spread: 2, bomb: "shock" },
+        { id: "atlas", name: "巨神", skillName: "重磅震荡", skillType: "控制类", skillDesc: "投下震荡航弹，压制敌人移动和开火，并对地面炮塔造成伤害。", color: "#ffd166", wing: "#fff1b3", hp: 5, speed: 5.7, shot: 7.2, spread: 0, bomb: "buster" },
+        { id: "comet", name: "彗星", skillName: "时缓航迹", skillType: "恢复类", skillDesc: "短暂减缓战场节奏并获得无敌窗口，适合恢复阵脚。", color: "#49db9a", wing: "#d8ffe9", hp: 3, speed: 8.8, shot: 7.6, spread: 3, bomb: "laser" },
+        { id: "vulcan", name: "火神", skillName: "旋转弹幕", skillType: "群伤类", skillDesc: "向四周释放旋转火神弹幕，适合被包围或贴近 Boss 时反击。", color: "#c88cff", wing: "#f0ddff", hp: 4, speed: 6.9, shot: 10.5, spread: 2, bomb: "cluster" },
+        { id: "mustang", name: "野马", skillName: "护航编队", skillType: "恢复类", skillDesc: "维持有限护航并补充少量护盾，适合稳住阵线，但不能无限堆叠。", color: "#f4f7f7", wing: "#9cc8d6", hp: 3, speed: 7.4, shot: 8.8, spread: 1, bomb: "sweep" }
       ];
 
       const powerDefs = {
@@ -1334,7 +1341,7 @@
         planeTypes.forEach(type => {
           const btn = document.createElement("button");
           btn.className = `plane-btn ${type.id === selectedPlane.id ? "active" : ""}`;
-          btn.innerHTML = `${makePlaneIcon(type)}<span class="plane-name">${type.name}</span>`;
+          btn.innerHTML = `${makePlaneIcon(type)}<span class="plane-name">${type.name}</span><span class="plane-type">${type.skillType}</span>`;
           btn.addEventListener("click", () => {
             selectedPlane = type;
             trainingTime = 0;
@@ -1496,7 +1503,7 @@
             "新兵第二项：A 主炮，X 副武器，Y 专属技能，先点射训练靶。",
             "新兵第三项：按 B 投弹，清除地面炮塔阵地。",
             "新兵第四项：看到红色弹道时，用小幅移动穿过空隙。",
-            `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”。${selectedPlane.skillDesc}`
+            `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”，类型：${selectedPlane.skillType}。${selectedPlane.skillDesc}`
           ];
         }
         if (selectedInputMode?.id === "touch") {
@@ -1505,7 +1512,7 @@
             "新兵第二项：按住“主炮”，再点“副武”和“技能”，持续压制训练靶。",
             "新兵第三项：点击“炸弹”按钮，清除地面炮塔阵地。",
             "新兵第四项：拖动时保持节奏，躲开红色地对空炮弹。",
-            `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”。${selectedPlane.skillDesc}`
+            `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”，类型：${selectedPlane.skillType}。${selectedPlane.skillDesc}`
           ];
         }
         return [
@@ -1513,7 +1520,7 @@
           "新兵第二项：J 主炮、K 副武、L 技能，右手按键集中完成攻击。",
           "新兵第三项：按分号键投弹，清除地面炮塔阵地。",
           "新兵第四项：看到红色弹道时，用小幅移动穿过空隙。",
-          `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”。${selectedPlane.skillDesc}`
+          `结业科目：当前座机“${selectedPlane.name}”技能为“${selectedPlane.skillName}”，类型：${selectedPlane.skillType}。${selectedPlane.skillDesc}`
         ];
       }
 
@@ -1711,7 +1718,7 @@
         p.skillCooldown = Math.max(160, 360 - p.skillLevel * 28 - p.cooldownLevel * 26);
         sfx("boss");
         if (p.plane.id === "falcon") {
-          game.bullets.push({ x: p.x, y: p.y - 120, vx: 0, vy: -32, r: 18 + p.skillLevel * 3, dmg: 170 + p.skillLevel * 55, damageType: DAMAGE_MAGIC, type: "laser", color: "#6bd6ff" });
+          game.bullets.push({ x: p.x, y: p.y - 120, vx: 0, vy: -32, r: 18 + p.skillLevel * 3, dmg: 130 + p.skillLevel * 42, damageType: DAMAGE_MAGIC, control: 150 + p.skillLevel * 24, type: "laser", color: "#6bd6ff" });
         } else if (p.plane.id === "raiden") {
           const arc = 7 + p.skillLevel;
           for (let i = -arc; i <= arc; i++) {
@@ -1721,17 +1728,21 @@
           explode(p.x, p.y - 170, "#ffd166", 24, 1.4);
           game.enemies.forEach(e => {
             if (e.hp <= 0) return;
-            applyDamage(e, e.kind === "boss" ? 240 + p.skillLevel * 75 : 160 + p.skillLevel * 45, DAMAGE_MAGIC);
+            applyControl(e, 130 + p.skillLevel * 28);
+            applyDamage(e, e.kind === "boss" ? 135 + p.skillLevel * 42 : 95 + p.skillLevel * 28, DAMAGE_MAGIC);
             if (e.hp <= 0) killEnemy(e);
           });
           game.turrets.forEach(t => {
             if (t.hp <= 0) return;
+            applyControl(t, 130 + p.skillLevel * 28);
             applyDamage(t, 140 + p.skillLevel * 55, DAMAGE_MAGIC);
             if (t.hp <= 0) killTurret(t);
           });
         } else if (p.plane.id === "comet") {
           slow = .42;
           p.inv = Math.max(p.inv, 130 + p.skillLevel * 20);
+          p.mana = Math.min(p.maxMana, p.mana + 18 + p.skillLevel * 6);
+          p.shield = Math.min(3, p.shield + .35 + p.skillLevel * .08);
         } else if (p.plane.id === "vulcan") {
           const count = 24 + p.skillLevel * 6;
           for (let i = 0; i < count; i++) {
@@ -1753,7 +1764,7 @@
         if (p.skillCooldown > 0) return `技能${Math.ceil(p.skillCooldown / 60)}`;
         const cost = skillManaCost(p);
         if (p.mana < cost) return `魔法${Math.ceil(cost - p.mana)}`;
-        return p.plane.skillName;
+        return p.plane.skillType;
       }
 
       function upgradeOptions() {
@@ -1761,7 +1772,7 @@
         return [
           { key: "mainLevel", name: "主炮强化", desc: "提高主炮伤害、射速和弹数。", level: p.mainLevel, max: 5, cost: 900 + p.mainLevel * 650 },
           { key: "secondaryLevel", name: "副武器强化", desc: "提高副武器伤害并缩短副武器间隔。", level: p.secondaryLevel, max: 5, cost: 1800 + p.secondaryLevel * 1200 },
-          { key: "skillLevel", name: `${p.plane.skillName}强化`, desc: "强化当前飞机专属技能效果。", level: p.skillLevel, max: 5, cost: 2400 + p.skillLevel * 1600 },
+          { key: "skillLevel", name: `${p.plane.skillType}强化`, desc: `强化“${p.plane.skillName}”的${p.plane.skillType}效果。`, level: p.skillLevel, max: 5, cost: 2400 + p.skillLevel * 1600 },
           { key: "cooldownLevel", name: "冷却训练", desc: "缩短专属技能冷却。", level: p.cooldownLevel, max: 4, cost: 2000 + p.cooldownLevel * 1500 }
         ];
       }
@@ -2064,7 +2075,7 @@
             return { id: "tank", name: "豹式", hp: 5900, r: 440, y: -470, vy: 1.22, color: "#6d785d", score: 7800, intro: "斯大林格勒战线的机动型坦克，转向更快，炮台压制也更凶。别停在正前方，边躲边拆它的装甲模块。" };
           }
           const acePick = planeTypes[Math.floor(Math.random() * planeTypes.length)];
-          return { id: "ace", name: `王牌·${acePick.name}`, hp: 2800, r: 36, y: -80, vy: 2.6, color: acePick.color, score: 12000, intro: `大不列颠上空，敌方王牌飞行员驾驶\"${acePick.name}\"拦截。他能使用\"${acePick.skillName}\"和全套技能系统——有4条命，每次复活都会升级。` };
+          return { id: "ace", name: `王牌·${acePick.name}`, hp: 2800, r: 36, y: -80, vy: 2.6, color: acePick.color, score: 12000, intro: `大不列颠上空，敌方王牌飞行员驾驶“${acePick.name}”拦截。他能使用${acePick.skillType}“${acePick.skillName}”和全套技能系统——有4条命，每次复活都会升级。` };
         })();
         game.bossSpawned = true;
         game.supplyDrop = false;
@@ -2360,14 +2371,16 @@
       }
 
       function updateTurret(t, dt) {
-        t.y += 1.4 * dt;
+        t.control = Math.max(0, (t.control || 0) - dt);
+        const controlSlow = t.control > 0 ? .45 : 1;
+        t.y += 1.4 * dt * controlSlow;
         if (t.y > H + 70) {
           t.y = -40;
           t.x = 120 + Math.random() * (W - 240);
         }
         const p = game.player;
         t.rot = Math.atan2(p.y - t.y, p.x - t.x);
-        t.fire -= dt;
+        t.fire -= dt * controlSlow;
         if (t.fire <= 0 && t.y > 70 && t.y < H * .72) {
           const speed = t.type === "naval" ? 4.6 : t.type === "cannon" ? 4.1 : 3.6;
           const radius = t.type === "naval" ? 13 : t.type === "cannon" ? 11 : 8;
@@ -2382,17 +2395,19 @@
 
       function updateEnemy(e, dt) {
         e.phase += dt;
+        e.control = Math.max(0, (e.control || 0) - dt);
+        const controlSlow = e.control > 0 ? .45 : 1;
         if (e.kind === "boss") {
           if (e.ace) {
             const ap = e.acePlane || planeTypes[0];
-            e.y = Math.min(250, Math.max(120, e.y + e.vy * dt));
+            e.y = Math.min(250, Math.max(120, e.y + e.vy * dt * controlSlow));
             const targetX = game.player.x + (W * .15 - game.player.x) * .06;
-            e.x += (targetX - e.x) * .018 * dt;
-            e.vy += Math.sin(e.phase * .035) * (.35 * dt);
+            e.x += (targetX - e.x) * .018 * dt * controlSlow;
+            e.vy += Math.sin(e.phase * .035) * (.35 * dt * controlSlow);
             updateBossParts(e, dt);
             const p = game.player;
             // ace main fire timer
-            e.aceFireTimer -= dt;
+            e.aceFireTimer -= dt * controlSlow;
             if (e.aceFireTimer <= 0) {
               e.aceFireTimer = Math.max(3.2, 12 - e.aceLevel * 1.2 - e.aceMainLevel * 0.45 - (ap.shot || 8) * 0.18);
              const p = game.player;
@@ -2403,7 +2418,7 @@
               }
             }
             // ace secondary fire timer
-            e.aceSecondaryTimer -= dt;
+            e.aceSecondaryTimer -= dt * controlSlow;
             if (e.aceSecondaryTimer <= 0) {
               e.aceSecondaryTimer = Math.max(30, 70 - e.aceSecondaryLevel * 8);
               const a = Math.atan2(p.y - e.y, p.x - e.x);
@@ -2411,7 +2426,7 @@
               addEnemyBullet(e.x + 28, e.y + 14, a + .08, 5.5, 12, "#ffd166");
             }
             // ace skill timer
-            e.aceSkillTimer -= dt;
+            e.aceSkillTimer -= dt * controlSlow;
             if (e.skillReady && e.aceSkillTimer <= 0) {
               e.skillReady = false;
               e.aceSkillTimer = Math.max(160, 380 - e.aceSkillLevel * 30 - e.aceCooldownLevel * 30);
@@ -2436,7 +2451,7 @@
               }
             }
             if (e.aceSkillTimer < 60) { e.skillReady = true; }
-            e.fire -= dt;
+            e.fire -= dt * controlSlow;
             if (e.fire <= 0) {
               bossFire(e, e.hp / e.maxHp);
               e.fire = 24 + Math.random() * 10;
@@ -2445,14 +2460,14 @@
           }
           const targetY = e.bossType === "tank" ? 330 : e.bossType === "carrier" ? 245 : 205;
           const sway = e.bossType === "tank" ? W * .13 : e.bossType === "carrier" ? W * .11 : W * .16;
-          e.y = Math.min(targetY, e.y + e.vy * dt);
+          e.y = Math.min(targetY, e.y + e.vy * dt * controlSlow);
           const xRate = e.bossType === "carrier" ? .014 : e.bossType === "tank" ? .022 : .02;
           const yDrift = Math.sin(e.phase * (e.bossType === "tank" ? .028 : .018)) * (e.bossType === "carrier" ? 34 : 48);
           e.x = W / 2 + Math.sin(e.phase * xRate) * sway + Math.sin(e.phase * .037) * (sway * .28);
           if (e.y >= targetY) e.y = targetY + yDrift;
           updateBossParts(e, dt);
           const hpRatio = e.hp / e.maxHp;
-          e.fire -= dt;
+          e.fire -= dt * controlSlow;
           if (e.fire <= 0) {
             bossFire(e, hpRatio);
             const base = e.bossType === "carrier" ? 42 : e.bossType === "tank" ? 40 : 46;
@@ -2460,9 +2475,9 @@
           }
           return;
         }
-        updateEnemyManeuver(e, dt);
+        updateEnemyManeuver(e, dt * controlSlow);
         keepEnemyOnBattlefield(e);
-        e.fire -= dt;
+        e.fire -= dt * controlSlow;
         if (e.fire <= 0) {
           enemyFire(e);
           const strength = playerStrength();
@@ -2503,10 +2518,11 @@
         if (!boss.parts) return;
         const p = game.player;
         const strength = playerStrength();
+        const controlSlow = boss.control > 0 ? .45 : 1;
         for (const part of boss.parts) {
           if (part.destroyed) continue;
           const pos = bossPartPosition(boss, part);
-          part.fire -= dt;
+          part.fire -= dt * controlSlow;
           if (part.fire <= 0 && pos.y > -40 && pos.y < H * .65) {
             const a = Math.atan2(p.y - pos.y, p.x - pos.x);
             addEnemyBullet(pos.x, pos.y, a, 3.5 + strength * .9, 9 + part.r * .05, "#ff8d5c");
@@ -2727,6 +2743,12 @@
         return finalDamage;
       }
 
+      function applyControl(target, duration) {
+        if (!target || duration <= 0) return;
+        const scale = target.kind === "boss" ? .45 : target.elite ? .72 : 1;
+        target.control = Math.max(target.control || 0, duration * scale);
+      }
+
       function collide() {
         const p = game.player;
         for (const b of game.bullets) {
@@ -2740,6 +2762,7 @@
             }
             if (hit(b, e, b.r + e.r * .72)) {
               applyDamage(e, b.dmg, b.damageType || DAMAGE_PHYSICAL);
+              if (b.control) applyControl(e, b.control);
               b.y = -999;
               sfx("hit");
               spark(b.x, b.y, b.color, 2);
@@ -2820,6 +2843,7 @@
           const pos = bossPartPosition(boss, part);
           if ((shot.x - pos.x) ** 2 + (shot.y - pos.y) ** 2 < (shot.r + part.r) ** 2) {
             part.hp -= damageAfterResistance(boss, damage, damageType);
+            if (shot.control) applyControl(boss, shot.control);
             if (part.hp <= 0) {
               part.destroyed = true;
               explode(pos.x, pos.y, "#ff8d5c", 14, .9);
@@ -3060,7 +3084,7 @@
         ctx.fillStyle = "#eef8ff";
         ctx.font = "800 24px Trebuchet MS";
         ctx.fillText(`可用分数：${game.score}`, panelX + 34, panelY + 96);
-        ctx.fillText(`当前座机：${game.player.plane.name}｜技能：${game.player.plane.skillName}`, panelX + 34, panelY + 128);
+        ctx.fillText(`当前座机：${game.player.plane.name}｜技能：${game.player.plane.skillName}｜${game.player.plane.skillType}`, panelX + 34, panelY + 128);
 
         upgradeOptions().forEach((opt, i) => {
           const x = panelX + 34;
