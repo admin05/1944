@@ -1057,7 +1057,7 @@
       const victoryPanel = document.querySelector("#victoryPanel");
 
       const planeTypes = [
-        { id: "falcon", name: "隼式", skillName: "穿甲长矛", skillType: "控制类", skillDesc: "发射一束高伤害贯穿光矛，适合拆 Boss 装甲炮台并压制航线。", color: "#6bd6ff", wing: "#dcefff", hp: 3, speed: 7.8, shot: 8.2, spread: 1, bomb: "napalm" },
+        { id: "falcon", name: "隼式", skillName: "穿甲长矛", skillType: "控制类", skillDesc: "发射主光矛和两道辅光矛，造成魔法伤害并长时间压制敌方行动。", color: "#6bd6ff", wing: "#dcefff", hp: 3, speed: 7.8, shot: 8.2, spread: 1, bomb: "napalm" },
         { id: "raiden", name: "雷电", skillName: "雷暴扇面", skillType: "群伤类", skillDesc: "向前方展开密集扇形雷暴弹幕，适合清理大群小兵。", color: "#ff5a57", wing: "#ffd1c4", hp: 4, speed: 6.5, shot: 9.8, spread: 2, bomb: "shock" },
         { id: "atlas", name: "巨神", skillName: "重磅震荡", skillType: "控制类", skillDesc: "投下震荡航弹，压制敌人移动和开火，并对地面炮塔造成伤害。", color: "#ffd166", wing: "#fff1b3", hp: 5, speed: 5.7, shot: 7.2, spread: 0, bomb: "buster" },
         { id: "comet", name: "彗星", skillName: "时缓航迹", skillType: "恢复类", skillDesc: "短暂减缓战场节奏并获得无敌窗口，适合恢复阵脚。", color: "#49db9a", wing: "#d8ffe9", hp: 3, speed: 8.8, shot: 7.6, spread: 3, bomb: "laser" },
@@ -1777,7 +1777,10 @@
         p.skillCooldown = Math.max(160, 360 - p.skillLevel * 28 - p.cooldownLevel * 26);
         sfx("boss");
         if (p.plane.id === "falcon") {
-          game.bullets.push({ x: p.x, y: p.y - 120, vx: 0, vy: -32, r: 18 + p.skillLevel * 3, dmg: 130 + p.skillLevel * 42, damageType: DAMAGE_MAGIC, control: 150 + p.skillLevel * 24, type: "laser", color: "#6bd6ff" });
+          game.bullets.push({ x: p.x, y: p.y - 122, vx: 0, vy: -34, r: 20 + p.skillLevel * 3, dmg: 170 + p.skillLevel * 50, damageType: DAMAGE_MAGIC, control: 190 + p.skillLevel * 32, type: "laser", color: "#6bd6ff" });
+          [-1, 1].forEach(side => {
+            game.bullets.push({ x: p.x + side * 28, y: p.y - 86, vx: side * 1.2, vy: -28, r: 11 + p.skillLevel, dmg: 58 + p.skillLevel * 18, damageType: DAMAGE_MAGIC, control: 90 + p.skillLevel * 18, type: "laser", color: "#dcefff" });
+          });
         } else if (p.plane.id === "raiden") {
           const arc = 7 + p.skillLevel;
           for (let i = -arc; i <= arc; i++) {
